@@ -533,7 +533,7 @@
             
             // 插件顺序
             const pluginOrder = [
-                'eval', 'aadecode', 'obfuscator', 'jsfuck',
+                'eval', 'jsjiamiv5', 'aadecode', 'obfuscator', 'jsfuck',
                 'sojsonv7', 'sojson', 'jsconfuser', 'awsc', 'jjencode', 'common'
             ];
             
@@ -1034,7 +1034,7 @@
                 let loadedPlugins = [];
                 let notLoadedPlugins = [];
                 
-                const pluginNames = ['eval', 'aadecode', 'obfuscator', 'jsfuck', 'sojsonv7', 'sojson', 'jsconfuser', 'awsc', 'jjencode', 'common'];
+                const pluginNames = ['eval', 'jsjiamiv5', 'aadecode', 'obfuscator', 'jsfuck', 'sojsonv7', 'sojson', 'jsconfuser', 'awsc', 'jjencode', 'common'];
                 
                 for (const pluginName of pluginNames) {
                     if (window.DecodePlugins[pluginName]) {
