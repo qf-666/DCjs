@@ -1,5 +1,5 @@
 // Common通用解密插件 - 作为最后的备选方案
-console.log("Common解密插件加载中...");
+console.log("jsconfuser解密插件加载中...");
 
 if(!window.DecodePlugins) {
     window.DecodePlugins = {};
@@ -97,4 +97,4 @@ window.DecodePlugins.jsconfuser = {
     }
 };
 
-console.log("Common解密插件加载完成");
+console.log("jsconfuser解密插件加载完成");
