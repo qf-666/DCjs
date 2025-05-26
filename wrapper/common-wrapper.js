@@ -1,44 +1,17 @@
-/**
- * JSJiami.com.v5 混淆代码解密插件
- * 适用于JSJiami v5版本的混淆代码解密
- */
-
-// 导出解密函数
-module.exports = function(code) {
-    // 如果不是JSJiami v5混淆代码，直接返回
-    if (!code || typeof code !== 'string' || !isJSJiamiV5(code)) {
-        return code;
-    }
-    
-    console.log("开始解密JSJiami.com.v5混淆代码");
-    
-    try {
-        // 1. 首先解码十六进制和Unicode编码的字符串
-        code = decodeHexStrings(code);
-        
-        // 2. 处理字符串数组
-        code = decodeStringArrays(code);
-        
-        // 3. 移除自解密回调
-        code = removeSelfDecrypt(code);
-        
-        // 4. 清理无用代码
-        code = cleanupCode(code);
-        
-        console.log("JSJiami.com.v5代码解密完成");
-        return code;
-    } catch (e) {
-        console.error("JSJiami.com.v5解密错误:", e);
-        return code; // 出错时返回原始代码
-    }
-};
+// JSJiami.com.v5 混淆代码解密插件
+const { parse } = require('@babel/parser');
+const _generate = require('@babel/generator');
+const generator = _generate.default;
+const _traverse = require('@babel/traverse');
+const traverse = _traverse.default;
+const t = require('@babel/types');
 
 /**
  * 检测是否为JSJiami v5混淆代码
  * @param {string} code - 要检测的代码
  * @returns {boolean} - 是否为JSJiami v5混淆代码
  */
-function isJSJiamiV5(code) {
+function detect(code) {
     // 检查JSJiami v5特有的特征字符串
     if (code.indexOf("jsjiami.com.v5") !== -1 || 
         code.indexOf("encode_version") !== -1) {
@@ -53,6 +26,53 @@ function isJSJiamiV5(code) {
     }
     
     return false;
+}
+
+/**
+ * 解码JSJiami v5混淆代码
+ * @param {string} code - 混淆的代码
+ * @returns {string} - 解密后的代码
+ */
+function deobfuscate(code) {
+    try {
+        // 首先解码字符串中的十六进制和Unicode编码
+        code = decodeHexStrings(code);
+        
+        // 解析AST
+        let ast;
+        try {
+            ast = parse(code, { 
+                errorRecovery: true,
+                sourceType: "module",
+                plugins: ["jsx", "typescript", "classProperties"]
+            });
+        } catch (e) {
+            console.error(`解析代码时出错: ${e.message}`);
+            // 如果解析失败，返回部分解码的代码
+            return code;
+        }
+        
+        // 处理字符串数组
+        decodeStringArrays(ast);
+        
+        // 清理调试保护
+        removeDebugProtection(ast);
+        
+        // 清理无用代码
+        cleanupCode(ast);
+        
+        // 生成代码
+        const result = generator(ast, {
+            comments: false,
+            jsescOption: { minimal: true }
+        }).code;
+        
+        // 移除JSJiami特有的版本标记
+        return result.replace(/;\s*encode_version\s*=\s*['"]jsjiami\.com\.v5['"];?/g, '');
+    } catch (e) {
+        console.error(`解密过程中出错: ${e.message}`);
+        return code; // 出错时返回部分解码的代码
+    }
 }
 
 /**
@@ -84,78 +104,225 @@ function decodeHexStrings(code) {
 
 /**
  * 处理字符串数组
- * @param {string} code - 混淆的代码
- * @returns {string} - 解码后的代码
+ * @param {Object} ast - AST树
  */
-function decodeStringArrays(code) {
-    // 寻找字符串数组定义，如 var _0x5b43=['abc','def',...]
-    const stringArrayRegex = /var\s+(_0x[a-f0-9]{4,6})\s*=\s*\[((?:'[^']*'|"[^"]*")(?:\s*,\s*(?:'[^']*'|"[^"]*"))*)\]/g;
+function decodeStringArrays(ast) {
+    // 收集字符串数组定义
+    const stringArrays = new Map();
     
-    let match;
-    while ((match = stringArrayRegex.exec(code)) !== null) {
-        try {
-            const arrayName = match[1];
-            const arrayContent = match[2];
+    traverse(ast, {
+        VariableDeclarator(path) {
+            const { id, init } = path.node;
             
-            // 解析数组内容
-            const stringsWithQuotes = arrayContent.split(',');
-            const strings = [];
-            
-            for (let i = 0; i < stringsWithQuotes.length; i++) {
-                let str = stringsWithQuotes[i].trim();
-                // 移除引号
-                if ((str.startsWith("'") && str.endsWith("'")) ||
-                    (str.startsWith('"') && str.endsWith('"'))) {
-                    str = str.substring(1, str.length - 1);
+            // 检查是否是数组定义 var _0x1234 = ['a', 'b', 'c', ...];
+            if (t.isIdentifier(id) && 
+                t.isArrayExpression(init) && 
+                id.name.startsWith('_0x') && 
+                init.elements.length > 0) {
+                
+                // 确保所有元素都是字符串字面量
+                const allStrings = init.elements.every(el => 
+                    t.isStringLiteral(el) || t.isNullLiteral(el) || el === null
+                );
+                
+                if (allStrings) {
+                    // 收集数组元素
+                    const elements = init.elements.map(el => 
+                        el && t.isStringLiteral(el) ? el.value : null
+                    );
+                    
+                    stringArrays.set(id.name, {
+                        elements,
+                        path
+                    });
+                    
+                    console.log(`找到字符串数组: ${id.name} (${elements.length}项)`);
                 }
-                strings.push(str);
             }
-            
-            if (strings.length === 0) continue;
-            
-            console.log(`找到字符串数组: ${arrayName} (${strings.length}项)`);
-            
-            // 创建替换正则表达式
-            const arrayAccessRegex = new RegExp(arrayName + '\\[(\\d+)\\]', 'g');
-            
-            // 替换数组访问
-            code = code.replace(arrayAccessRegex, function(match, index) {
-                const idx = parseInt(index);
-                if (idx >= 0 && idx < strings.length) {
-                    return "'" + strings[idx] + "'";
+        }
+    });
+    
+    // 替换字符串数组引用
+    if (stringArrays.size > 0) {
+        traverse(ast, {
+            MemberExpression(path) {
+                if (path.node.computed && 
+                    t.isIdentifier(path.node.object) && 
+                    stringArrays.has(path.node.object.name)) {
+                    
+                    const arrayName = path.node.object.name;
+                    const array = stringArrays.get(arrayName);
+                    
+                    // 检查属性是否是数字字面量
+                    if (t.isNumericLiteral(path.node.property)) {
+                        const index = path.node.property.value;
+                        if (index >= 0 && index < array.elements.length && array.elements[index] !== null) {
+                            // 替换为字符串字面量
+                            path.replaceWith(t.stringLiteral(array.elements[index]));
+                        }
+                    }
                 }
-                return match;
-            });
-        } catch (e) {
-            console.error("处理字符串数组时出错:", e);
+            }
+        });
+        
+        // 查找并处理字符串数组的移位操作
+        traverse(ast, {
+            CallExpression(path) {
+                if (t.isMemberExpression(path.node.callee) && 
+                    t.isIdentifier(path.node.callee.property, { name: 'push' }) &&
+                    t.isIdentifier(path.node.callee.object) && 
+                    stringArrays.has(path.node.callee.object.name)) {
+                    
+                    // 检查是否是数组移位操作 _0x1234.push(_0x1234.shift());
+                    if (path.node.arguments.length === 1 && 
+                        t.isCallExpression(path.node.arguments[0]) && 
+                        t.isMemberExpression(path.node.arguments[0].callee) && 
+                        t.isIdentifier(path.node.arguments[0].callee.property, { name: 'shift' }) &&
+                        t.isIdentifier(path.node.arguments[0].callee.object) && 
+                        path.node.arguments[0].callee.object.name === path.node.callee.object.name) {
+                        
+                        // 找到了移位操作，移除它
+                        if (path.parentPath.isExpressionStatement()) {
+                            path.parentPath.remove();
+                        } else {
+                            path.remove();
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 移除未使用的字符串数组
+        for (const [name, info] of stringArrays) {
+            const binding = info.path.scope.getBinding(name);
+            if (binding && binding.referenced === false) {
+                info.path.remove();
+            }
         }
     }
-    
-    return code;
 }
 
 /**
- * 移除自解密回调
- * @param {string} code - 混淆的代码
- * @returns {string} - 处理后的代码
+ * 移除调试保护
+ * @param {Object} ast - AST树
  */
-function removeSelfDecrypt(code) {
-    // 移除可能的自解密回调
-    code = code.replace(/;\(function\(_0x[a-f0-9]{4,6},_0x[a-f0-9]{4,6}\)\{[^}]+}\);/g, '');
-    return code;
+function removeDebugProtection(ast) {
+    // 移除无限调试器循环
+    traverse(ast, {
+        FunctionDeclaration(path) {
+            const { id, body } = path.node;
+            if (!id || !t.isIdentifier(id)) return;
+            
+            const bodyStatements = body.body;
+            
+            // 检查是否包含 debugger 语句
+            const hasDebugger = bodyStatements.some(stmt => t.isDebuggerStatement(stmt));
+            
+            if (hasDebugger) {
+                // 检查是否有自调用
+                const hasSelfCall = bodyStatements.some(stmt => {
+                    if (t.isExpressionStatement(stmt) && 
+                        t.isCallExpression(stmt.expression) && 
+                        t.isIdentifier(stmt.expression.callee, { name: id.name })) {
+                        return true;
+                    }
+                    return false;
+                });
+                
+                if (hasSelfCall) {
+                    console.log(`移除调试器保护函数: ${id.name}`);
+                    path.remove();
+                }
+            }
+        },
+        
+        // 移除单独的debugger语句
+        DebuggerStatement(path) {
+            path.remove();
+        }
+    });
 }
 
 /**
  * 清理无用代码
- * @param {string} code - 混淆的代码
- * @returns {string} - 清理后的代码
+ * @param {Object} ast - AST树
  */
-function cleanupCode(code) {
-    // 移除JSJiami特有的版本标记
-    code = code.replace(/;\s*encode_version\s*=\s*['"]jsjiami\.com\.v5['"];?/g, '');
-    
+function cleanupCode(ast) {
     // 移除空语句
-    code = code.replace(/;;/g, ';');
+    traverse(ast, {
+        EmptyStatement(path) {
+            path.remove();
+        }
+    });
     
-    return code;
+    // 移除未使用的变量
+    traverse(ast, {
+        VariableDeclarator(path) {
+            const { id } = path.node;
+            if (!t.isIdentifier(id)) return;
+            
+            const binding = path.scope.getBinding(id.name);
+            if (binding && binding.referenced === false) {
+                if (path.parentPath.node.declarations.length === 1) {
+                    path.parentPath.remove();
+                } else {
+                    path.remove();
+                }
+            }
+        }
+    });
+    
+    // 尝试移除JSJiami特有的自解密回调
+    traverse(ast, {
+        ExpressionStatement(path) {
+            if (t.isCallExpression(path.node.expression) && 
+                t.isFunctionExpression(path.node.expression.callee) && 
+                path.node.expression.arguments.length > 0) {
+                
+                const func = path.node.expression.callee;
+                
+                // 检查是否可能是JSJiami的自解密回调
+                if (func.params.length === 2 && 
+                    func.params.every(p => t.isIdentifier(p) && p.name.startsWith('_0x'))) {
+                    
+                    // 查看函数体中是否包含eval或类似操作
+                    const funcBody = generator(func.body).code;
+                    if (funcBody.includes('eval') || 
+                        funcBody.includes('Function') || 
+                        funcBody.includes('encode_version')) {
+                        
+                        console.log('移除JSJiami自解密回调');
+                        path.remove();
+                    }
+                }
+            }
+        }
+    });
 }
+
+/**
+ * 主解密函数
+ * @param {string} code - 混淆的代码
+ * @returns {string} - 解密后的代码
+ */
+module.exports = function(code) {
+    if (!code || typeof code !== 'string') {
+        return code;
+    }
+    
+    // 检测是否为JSJiami v5混淆代码
+    if (!detect(code)) {
+        return code;
+    }
+    
+    console.log("开始解密JSJiami.com.v5混淆代码");
+    
+    try {
+        const result = deobfuscate(code);
+        console.log("JSJiami.com.v5解密完成");
+        return result;
+    } catch (e) {
+        console.error(`JSJiami.com.v5解密失败: ${e.message}`);
+        return code; // 出错时返回原始代码
+    }
+};
