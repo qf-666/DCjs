@@ -5,7 +5,7 @@ if(!window.DecodePlugins) {
     window.DecodePlugins = {};
 }
 
-window.DecodePlugins.common = {
+window.DecodePlugins.jsjiamiv5 = {
     detect: function(code) {
         // 通用插件总是返回true，因为它是最后的备选方案
         return true;
