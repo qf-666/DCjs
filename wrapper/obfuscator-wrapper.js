@@ -1,834 +1,759 @@
-// JSJiami.com.v7混淆解密插件 - 增强版
-console.log("JSJiami.com.v7解密插件(增强版)加载中...");
+/**
+ * JSJiami.com.v7 混淆代码解密插件
+ * 支持 JSJiami v7 系列混淆
+ */
+import { parse } from '@babel/parser'
+import _generate from '@babel/generator'
+const generator = _generate.default
+import _traverse from '@babel/traverse'
+const traverse = _traverse.default
+import * as t from '@babel/types'
 
-if(!window.DecodePlugins) {
-    window.DecodePlugins = {console.log("JSJiami.com.v7解密插件(增强版)加载完成");
+// 匹配特征选项
+const optGenMin = {
+  comments: false,
+  minified: true,
+  jsescOption: { minimal: true },
 }
 
-window.DecodePlugins.jsjiamiV7 = {
+export default {
+    // 插件名称
+    name: "JSJiami.com.v7解密插件",
+    
+    // 插件版本
+    version: "1.0.0",
+    
+    // 检测是否为JSJiami混淆代码
     detect: function(code) {
-        if (!code || typeof code !== 'string') return false;
-        
-        // 更精确地检测jsjiami.com.v7特征
-        return code.indexOf('jsjiami.com.v7') !== -1 || 
-               (code.indexOf('_0x') !== -1 && 
-                code.indexOf('function _0x') !== -1);
-    },
-    
-    plugin: function(code) {
-        try {
-            if (!this.detect(code)) {
-                return code;
-            }
-            
-            console.log("开始处理JSJiami.com.v7加密代码");
-            
-            // 备份原始代码以检测是否有变化
-            var originalCode = code;
-            
-            // 创建AST
-            var ast = this.parseCode(code);
-            if (!ast) {
-                console.error("无法解析代码到AST");
-                return code;
-            }
-            
-            // 阶段1: 清理非法return语句
-            this.cleanIllegalReturns(ast);
-            
-            // 阶段2: 清理字面量的二进制表示
-            this.cleanLiteralBinaryRepresentation(ast);
-            
-            // 阶段3: 解码全局加密
-            console.log("处理全局加密...");
-            ast = this.decodeGlobal(ast);
-            if (!ast) {
-                console.error("全局解密失败");
-                return code;
-            }
-            
-            // 阶段4: 处理控制流加密
-            console.log("处理代码块加密...");
-            this.parseControlFlowStorage(ast);
-            
-            // 阶段5: 清理死代码
-            console.log("清理死代码...");
-            ast = this.cleanDeadCode(ast);
-            
-            // 阶段6: 刷新代码
-            ast = this.parseCode(
-                this.generateCode(ast, {
-                    comments: false,
-                    jsescOption: { minimal: true }
-                })
-            );
-            
-            // 阶段7: 提高代码可读性
-            console.log("提高代码可读性...");
-            this.purifyCode(ast);
-            
-            // 阶段8: 刷新代码
-            ast = this.parseCode(this.generateCode(ast, { comments: false }));
-            
-            // 阶段9: 解除环境限制
-            console.log("解除环境限制...");
-            this.unlockEnv(ast);
-            
-            // 生成最终代码
-            console.log("净化完成");
-            var finalCode = this.generateCode(ast, {
-                comments: false,
-                jsescOption: { minimal: true }
-            });
-            
-            // 添加解密标记
-            var timestamp = new Date().toLocaleString();
-            finalCode = "/*\n * JSJiami.com.v7 解密结果\n * 解密时间: " + timestamp + "\n */\n\n" + finalCode;
-            
-            // 检测代码是否有变化
-            if (finalCode === originalCode) {
-                console.log("JSJiami.com.v7代码没有变化，可能需要更高级的解密方法");
-                
-                // 尝试最后的方法 - 添加辅助注释
-                finalCode = this.addHelperComments(finalCode);
-            } else {
-                console.log("JSJiami.com.v7代码解密成功");
-            }
-            
-            return finalCode;
-        } catch (e) {
-            console.error("JSJiami.com.v7解密错误:", e);
-            // 出错时返回带有错误信息的原始代码
-            return "/* 解密过程中出错: " + e.message + " */\n\n" + code;
+        // 检查特征字符串
+        if (code.includes("jsjiami.com.v7") || 
+            code.includes("var _0x") || 
+            code.includes("['版本号']")) {
+            return true;
         }
+        
+        // 检查特征函数模式
+        if (/function _0x[a-f0-9]{4}\(\)/.test(code) &&
+            /var _0x[a-f0-9]{4}=\(function\(\)/.test(code)) {
+            return true;
+        }
+        
+        return false;
     },
     
-    // Babel工具函数
-    parseCode: function(code) {
+    // 主插件函数
+    plugin: function(code) {
+        console.log("开始解密JSJiami混淆...");
+        
+        // 解析AST
+        let ast;
         try {
-            return parse(code, { errorRecovery: true });
+            ast = parse(code, { errorRecovery: true });
         } catch (e) {
             console.error(`无法解析代码: ${e.reasonCode}`);
-            return null;
+            return this.addHelperComments(code);
         }
-    },
-    
-    generateCode: function(ast, options) {
-        return generator(ast, options).code;
-    },
-    
-    // 清理非法return语句
-    cleanIllegalReturns: function(ast) {
+        
+        // 清理二进制显示内容
         traverse(ast, {
-            ReturnStatement: function(path) {
-                if (!path.findParent((parent) => parent.isFunction())) {
-                    path.remove();
-                }
-            }
-        });
-    },
-    
-    // 清理字面量的二进制表示
-    cleanLiteralBinaryRepresentation: function(ast) {
-        traverse(ast, {
-            StringLiteral: function({ node }) {
+            StringLiteral: ({ node }) => {
                 delete node.extra;
             },
-            NumericLiteral: function({ node }) {
+            NumericLiteral: ({ node }) => {
                 delete node.extra;
-            }
-        });
-    },
-    
-    // 解码全局加密
-    decodeGlobal: function(ast) {
-        // 清理空语句
-        let i = 0;
-        while (i < ast.program.body.length) {
-            if (t.isEmptyStatement(ast.program.body[i])) {
-                ast.program.body.splice(i, 1);
-            } else {
-                ++i;
-            }
-        }
-        
-        // 检查代码是否太短
-        if (i < 3) {
-            console.log('错误: 代码太短');
-            return false;
-        }
-        
-        // 分割第一行
-        traverse(ast, {
-            Program(path) {
-                path.stop();
-                const l1 = path.get('body.0');
-                if (!l1.isVariableDeclaration()) {
-                    return;
-                }
-                const defs = l1.node.declarations;
-                const kind = l1.node.kind;
-                for (let i = defs.length - 1; i; --i) {
-                    l1.insertAfter(t.VariableDeclaration(kind, [defs[i]]));
-                    l1.get(`declarations.${i}`).remove();
-                }
-                l1.scope.crawl();
             },
         });
         
-        // 查找主加密函数
-        // [version, string-array, call, ...]
-        let decrypt_code = [];
-        for (let i = 0; i < 3; ++i) {
-            decrypt_code.push(t.EmptyStatement());
+        // 删除非法return语句
+        this.removeIllegalReturn(ast);
+        
+        // 处理全局字符串解密
+        if (!this.decodeStringArray(ast)) {
+            console.warn("字符串数组解密失败，尝试其他方法...");
+            // 尝试简单的字符串数组解密
+            this.simpleStringArrayDecode(ast);
         }
         
-        const first_line = ast.program.body[0];
-        let var_version;
+        // 解除控制流平坦化
+        this.restoreControlFlow(ast);
         
-        if (t.isVariableDeclaration(first_line)) {
-            if (first_line.declarations.length) {
-                var_version = first_line.declarations[0].id.name;
-            }
-        } else if (t.isCallExpression(first_line?.expression)) {
-            let call_func = first_line.expression.callee?.name;
-            let i = ast.program.body.length;
-            let find = false;
-            while (--i) {
-                let part = ast.program.body[i];
-                if (!t.isFunctionDeclaration(part) || part?.id?.name !== call_func) {
-                    continue;
-                }
-                if (find) {
-                    // 移除重复定义
-                    ast.program.body[i] = t.emptyStatement();
-                    continue;
-                }
-                find = true;
-                let obj = part.body.body[0]?.expression?.left;
-                if (!obj || !t.isMemberExpression(obj) || obj.object?.name !== 'global') {
-                    break;
-                }
-                var_version = obj.property?.value;
-                decrypt_code.push(part);
-                ast.program.body[i] = t.emptyStatement();
-                continue;
+        // 解除环境限制
+        this.unlockEnv(ast);
+        
+        // 净化代码以提高可读性
+        this.purifyCode(ast);
+        
+        // 删除未使用的变量
+        this.removeUnusedVars(ast);
+        
+        // 生成代码
+        try {
+            const deobfuscatedCode = generator(ast, { 
+                jsescOption: { minimal: true } 
+            }).code;
+            
+            console.log("JSJiami混淆解密完成");
+            return deobfuscatedCode;
+        } catch (e) {
+            console.error(`生成代码时出错: ${e.message}`);
+            return this.addHelperComments(code);
+        }
+    },
+    
+    // 删除非法return语句
+    removeIllegalReturn: function(ast) {
+        function visitor(path) {
+            const parent = path.getFunctionParent();
+            if (parent && t.isProgram(parent.parent)) {
+                path.replaceWith(t.expressionStatement(path.node.argument || t.identifier('undefined')));
             }
         }
         
-        if (!var_version) {
-            console.error('第1行不是版本变量!');
+        traverse(ast, {
+            ReturnStatement: visitor
+        });
+    },
+    
+    // 解码字符串数组
+    decodeStringArray: function(ast) {
+        // 尝试查找字符串数组定义
+        let stringArrayInfo = this.findStringArray(ast);
+        
+        if (!stringArrayInfo.stringArrayName) {
+            console.error("无法找到字符串数组!");
             return false;
         }
         
-        console.info(`版本变量: ${var_version}`);
-        decrypt_code[0] = first_line;
-        ast.program.body.shift();
-
-        // 迭代并分类所有对var_version的引用
-        const refs = {
-            string_var: null,
-            string_path: null,
-            def: [],
-        };
+        console.log(`找到字符串数组: ${stringArrayInfo.stringArrayName}`);
         
-        traverse(ast, {
-            Identifier: (path) => {
-                const name = path.node.name;
-                if (name !== var_version) {
-                    return;
-                }
-                const up1 = path.parentPath;
-                if (up1.isVariableDeclarator()) {
-                    refs.def.push(path);
-                } else if (up1.isArrayExpression()) {
-                    let node_table = path.getFunctionParent();
-                    while (node_table.getFunctionParent()) {
-                        node_table = node_table.getFunctionParent();
-                    }
-                    let var_string_table = null;
-                    if (node_table.node.id) {
-                        var_string_table = node_table.node.id.name;
-                    } else {
-                        while (!node_table.isVariableDeclarator()) {
-                            node_table = node_table.parentPath;
-                        }
-                        var_string_table = node_table.node.id.name;
-                    }
-                    let valid = true;
-                    up1.traverse({
-                        MemberExpression(path) {
-                            valid = false;
-                            path.stop();
-                        },
-                    });
-                    if (valid) {
-                        refs.string_var = var_string_table;
-                        refs.string_path = node_table;
-                    } else {
-                        console.info(`删除字符串表: ${var_string_table}`);
-                    }
-                } else if (up1.isAssignmentExpression() && path.key === 'left') {
-                    // 直接删除赋值
-                    const up2 = up1.parentPath;
-                    up2.replaceWith(up2.node.left);
-                } else {
-                    console.warn(`意外的var_version引用: ${up1}`);
-                }
-            },
-        });
-        
-        // 检查是否包含字符串表
-        let var_string_table = refs.string_var;
-        if (!var_string_table) {
-            console.error('找不到字符串表');
+        // 尝试执行字符串解密函数
+        try {
+            this.virtualGlobalEval(stringArrayInfo.stringArrayCodes.join(';'));
+        } catch (e) {
+            console.error(`字符串数组解密失败: ${e.message}`);
             return false;
         }
         
-        // 检查是否包含旋转函数和解密变量
-        let decrypt_val;
-        let decrypt_path;
-        let binds = refs.string_path.scope.getBinding(var_string_table);
+        // 递归替换所有解密函数调用
+        for (let item of stringArrayInfo.stringArrayCalls) {
+            this.replaceStringCalls([], item);
+        }
         
-        const parse_main_call = (path) => {
-            decrypt_path = path;
-            const node = path.node;
-            const copy = t.functionDeclaration(node.id, node.params, node.body);
-            node.body = t.blockStatement([]);
-            return copy;
+        return true;
+    },
+    
+    // 查找字符串数组
+    findStringArray: function(ast) {
+        // 按照JSJiami v7的特征尝试找到字符串数组
+        let result = {
+            version: 7,
+            stringArrayName: null,
+            stringArrayCodes: [],
+            stringArrayCalls: []
         };
         
-        // 移除字符串表的路径
-        if (refs.string_path.isVariableDeclarator()) {
-            decrypt_code[1] = t.variableDeclaration('var', [refs.string_path.node]);
-        } else {
-            decrypt_code[1] = refs.string_path.node;
-        }
-        refs.string_path.remove();
-        
-        // 迭代引用
-        let cache = undefined;
-        for (let bind of binds.referencePaths) {
-            if (bind.findParent((path) => path.removed)) {
-                continue;
-            }
-            const parent = bind.parentPath;
-            if (parent.isCallExpression() && bind.listKey === 'arguments') {
-                // 旋转函数
-                cache = parent;
-                continue;
-            }
-            if (parent.isSequenceExpression()) {
-                // 旋转函数
-                decrypt_code.push(t.expressionStatement(parent.node));
-                const up2 = parent.parentPath;
-                if (up2.isIfStatement()) {
-                    // 在新版本中，旋转函数会被一个空的IfStatement包裹
-                    up2.remove();
-                } else {
-                    parent.remove();
-                }
-                continue;
-            }
-            if (parent.isVariableDeclarator()) {
-                // 主解密值
-                let top = parent.getFunctionParent();
-                while (top.getFunctionParent()) {
-                    top = top.getFunctionParent();
-                }
-                decrypt_code[2] = parse_main_call(top);
-                decrypt_val = top.node.id.name;
-                continue;
-            }
-            if (parent.isCallExpression() && !parent.node.arguments.length) {
-                // 主解密值
-                if (!t.isVariableDeclarator(parent.parentPath.node)) {
-                    continue;
-                }
-                let top = parent.getFunctionParent();
-                while (top.getFunctionParent()) {
-                    top = top.getFunctionParent();
-                }
-                decrypt_code[2] = parse_main_call(top);
-                decrypt_val = top.node.id.name;
-                continue;
-            }
-            if (parent.isExpressionStatement()) {
-                parent.remove();
-                continue;
-            }
-            console.warn(`意外的var_string_table引用: ${parent}`);
-        }
-        
-        // 如果检测到旋转函数但未处理，现在处理它
-        if (decrypt_code.length === 3 && cache) {
-            if (cache.parentPath.isExpressionStatement()) {
-                decrypt_code.push(cache.parent);
-                cache = cache.parentPath;
-            } else {
-                decrypt_code.push(t.expressionStatement(cache.node));
-            }
-            cache.remove();
-        }
-        
-        decrypt_path.parentPath.scope.crawl();
-        if (!decrypt_val) {
-            console.error('找不到解密变量');
-            return false;
-        }
-        console.log(`主调用包装名称: ${decrypt_val}`);
-
-        // 运行解密语句
-        let content_code = ast.program.body;
-        ast.program.body = decrypt_code;
-        let { code } = generator(ast, {
-            compact: true,
-        });
-        
-        this.virtualGlobalEval(code);
-        
-        // 处理内容语句
-        ast.program.body = content_code;
-        
-        const funToStr = (path) => {
-            let tmp = path.toString();
-            let value = this.virtualGlobalEval(tmp);
-            path.replaceWith(t.valueToNode(value));
-        };
-        
-        const memToStr = (path) => {
-            let tmp = path.toString();
-            let value = this.virtualGlobalEval(tmp);
-            path.replaceWith(t.valueToNode(value));
-        };
-        
-        const dfs = (stk, item) => {
-            stk.push(item);
-            const cur_val = item.name;
-            console.log(`进入子函数 ${stk.length}:${cur_val}`);
-            let pfx = '';
-            for (let parent of stk) {
-                pfx += parent.code + ';';
-            }
-            this.virtualGlobalEval(pfx);
-            let scope = item.path.scope;
-            if (item.path.isFunctionDeclaration()) {
-                scope = item.path.parentPath.scope;
-            }
-            // var是函数作用域的，let是块作用域的
-            // 因此，var可能不在当前作用域中，例如在for循环中
-            const binding = scope.getBinding(cur_val);
-            scope = binding.scope;
-            const refs = binding.referencePaths;
-            const refs_next = [];
-            
-            for (let ref of refs) {
-                const parent = ref.parentPath;
-                if (ref.key === 'init') {
-                    // VariableDeclarator
-                    refs_next.push({
-                        name: parent.node.id.name,
-                        path: parent,
-                        code: 'var ' + parent,
-                    });
-                } else if (ref.key === 'right') {
-                    // AssignmentExpression
-                    refs_next.push({
-                        name: parent.node.left.name,
-                        path: parent,
-                        code: 'var ' + parent,
-                    });
-                } else if (ref.key === 'object') {
-                    // MemberExpression
-                    memToStr(parent);
-                } else if (ref.key === 'callee') {
-                    // CallExpression
-                    funToStr(parent);
-                } else {
-                    console.log('错误: 意外的引用');
-                }
-            }
-            
-            for (let ref of refs_next) {
-                dfs(stk, ref);
-            }
-            
-            scope.crawl();
-            item.path.remove();
-            scope.crawl();
-            console.log(`退出子函数 ${stk.length}:${cur_val}`);
-            stk.pop();
-        };
-        
-        const root = {
-            name: decrypt_val,
-            path: decrypt_path,
-            code: '',
-        };
-        
-        dfs([], root);
-        return ast;
-    },
-    
-    // 处理控制流存储
-    parseControlFlowStorage: function(ast) {
-        // 这里可以实现控制流重建的逻辑
-        // 由于太复杂，此处略去详细实现
-        console.log("控制流处理完成");
-    },
-    
-    // 清理基于switch的控制流平坦化(while模式)
-    cleanSwitchCode1: function(path) {
-        const node = path.node;
-        if (!(t.isBooleanLiteral(node.test) || t.isUnaryExpression(node.test))) {
-            return;
-        }
-        if (!(node.test.prefix || node.test.value)) {
-            return;
-        }
-        if (!t.isBlockStatement(node.body)) {
-            return;
-        }
-        const body = node.body.body;
-        if (
-            !t.isSwitchStatement(body[0]) ||
-            !t.isMemberExpression(body[0].discriminant) ||
-            !t.isBreakStatement(body[1])
-        ) {
-            return;
-        }
-        
-        // Switch语句变量
-        const swithStm = body[0];
-        const arrName = swithStm.discriminant.object.name;
-        const argName = swithStm.discriminant.property.argument.name;
-        console.log(`扁平化还原: ${arrName}[${argName}]`);
-        
-        // 在while上面的节点寻找这两个变量
-        let arr = [];
-        path.getAllPrevSiblings().forEach((pre_path) => {
-            const { declarations } = pre_path.node;
-            if (!declarations || !declarations.length) return;
-            
-            let { id, init } = declarations[0];
-            if (arrName == id.name && init && init.callee && init.callee.object) {
-                arr = init.callee.object.value.split('|');
-                pre_path.remove();
-            }
-            if (argName == id.name) {
-                pre_path.remove();
-            }
-        });
-        
-        // 重建代码块
-        const caseList = swithStm.cases;
-        let resultBody = [];
-        arr.map((targetIdx) => {
-            // 从当前序号开始直到遇到continue
-            let valid = true;
-            targetIdx = parseInt(targetIdx);
-            while (valid && targetIdx < caseList.length) {
-                const targetBody = caseList[targetIdx].consequent;
-                const test = caseList[targetIdx].test;
-                if (!t.isStringLiteral(test) || parseInt(test.value) !== targetIdx) {
-                    console.log(`switch中出现乱序的序号: ${test.value}:${targetIdx}`);
-                }
-                for (let i = 0; i < targetBody.length; ++i) {
-                    const s = targetBody[i];
-                    if (t.isContinueStatement(s)) {
-                        valid = false;
-                        break;
-                    }
-                    if (t.isReturnStatement(s)) {
-                        valid = false;
-                        resultBody.push(s);
-                        break;
-                    }
-                    if (t.isBreakStatement(s)) {
-                        console.log(`switch中出现意外的break: ${arrName}[${argName}]`);
-                    } else {
-                        resultBody.push(s);
-                    }
-                }
-                targetIdx++;
-            }
-        });
-        
-        // 替换整个while语句
-        path.replaceInline(resultBody);
-    },
-    
-    // 清理基于switch的控制流平坦化(for模式)
-    cleanSwitchCode2: function(path) {
-        const node = path.node;
-        if (node.init || node.test || node.update) {
-            return;
-        }
-        if (!t.isBlockStatement(node.body)) {
-            return;
-        }
-        const body = node.body.body;
-        if (
-            !t.isSwitchStatement(body[0]) ||
-            !t.isMemberExpression(body[0].discriminant) ||
-            !t.isBreakStatement(body[1])
-        ) {
-            return;
-        }
-        
-        // Switch语句变量
-        const swithStm = body[0];
-        const arrName = swithStm.discriminant.object.name;
-        const argName = swithStm.discriminant.property.argument.name;
-        
-        // 在for上面的节点寻找这两个变量
-        let arr = null;
-        for (let pre_path of path.getAllPrevSiblings()) {
-            if (!pre_path.isVariableDeclaration()) {
-                continue;
-            }
-            let test = '' + pre_path;
-            try {
-                arr = this.evalOneTime(test + `;${arrName}.join('|')`);
-                arr = arr.split('|');
-            } catch {
-                // 忽略错误
-            }
-        }
-        if (!Array.isArray(arr)) {
-            return;
-        }
-        console.log(`扁平化还原: ${arrName}[${argName}]`);
-        
-        // 重建代码块
-        const caseMap = {};
-        for (let item of swithStm.cases) {
-            caseMap[item.test.value] = item.consequent;
-        }
-        let resultBody = [];
-        arr.map((targetIdx) => {
-            // 从当前序号开始直到遇到continue
-            let valid = true;
-            while (valid && targetIdx < arr.length) {
-                const targetBody = caseMap[targetIdx];
-                for (let i = 0; i < targetBody.length; ++i) {
-                    const s = targetBody[i];
-                    if (t.isContinueStatement(s)) {
-                        valid = false;
-                        break;
-                    }
-                    if (t.isReturnStatement(s)) {
-                        valid = false;
-                        resultBody.push(s);
-                        break;
-                    }
-                    if (t.isBreakStatement(s)) {
-                        console.log(`switch中出现意外的break: ${arrName}[${argName}]`);
-                    } else {
-                        resultBody.push(s);
-                    }
-                }
-                targetIdx++;
-            }
-        });
-        
-        // 替换整个for语句
-        path.replaceInline(resultBody);
-    },
-    
-    // 清理死代码和平坦控制流
-    cleanDeadCode: function(ast) {
-        // 计算常量表达式
-        traverse(ast, {
-            BinaryExpression(path) {
-                const { left, right, operator } = path.node;
-                
-                // 只处理两个操作数都是字面量的情况
-                if (t.isLiteral(left) && t.isLiteral(right)) {
-                    let result;
-                    
-                    // 处理不同的操作符
-                    switch (operator) {
-                        case '+':
-                            result = left.value + right.value;
-                            break;
-                        case '-':
-                            result = left.value - right.value;
-                            break;
-                        case '*':
-                            result = left.value * right.value;
-                            break;
-                        case '/':
-                            result = left.value / right.value;
-                            break;
-                        // 其他操作符
-                        default:
-                            return;
-                    }
-                    
-                    path.replaceWith(t.valueToNode(result));
-                }
-            }
-        });
-        
-        // 删除if分支
-        traverse(ast, {
-            IfStatement: {
-                exit(path) {
-                    const { test, consequent, alternate } = path.node;
-                    
-                    // 检查条件是否为布尔字面量
-                    if (t.isBooleanLiteral(test)) {
-                        if (test.value === true) {
-                            // 替换if语句为其consequent
-                            path.replaceWithMultiple(
-                                t.isBlockStatement(consequent) 
-                                ? consequent.body 
-                                : [consequent]
-                            );
-                        } else if (alternate) {
-                            // 替换if语句为其alternate
-                            path.replaceWithMultiple(
-                                t.isBlockStatement(alternate) 
-                                ? alternate.body 
-                                : [alternate]
-                            );
-                        } else {
-                            // 如果没有alternate且条件为false，则完全移除
-                            path.remove();
-                        }
-                    }
-                }
-            }
-        });
-        
-        // 处理while模式的扁平控制流
-        traverse(ast, { 
-            WhileStatement: { 
-                exit: this.cleanSwitchCode1.bind(this) 
-            } 
-        });
-        
-        // 处理for模式的扁平控制流
-        traverse(ast, { 
-            ForStatement: { 
-                exit: this.cleanSwitchCode2.bind(this) 
-            } 
-        });
-        
-        return ast;
-    },
-    
-    // 移除唯一调用
-    removeUniqueCall: function(path) {
-        let up1 = path.parentPath;
-        let decorator = up1.node.callee.name;
-        console.info(`移除装饰器: ${decorator}`);
-        let bind1 = up1.scope.getBinding(decorator);
-        bind1.path.remove();
-        if (up1.key === 'callee') {
-            up1.parentPath.remove();
-        } else if (up1.key === 'init') {
-            let up2 = up1.parentPath;
-            let call = up2.node.id.name;
-            console.info(`移除调用: ${call}`);
-            let bind2 = up2.scope.getBinding(call);
-            up2.remove();
-            for (let ref of bind2.referencePaths) {
-                if (ref.findParent((path) => path.removed)) {
-                    continue;
-                }
-                if (ref.key === 'callee') {
-                    let rm = ref.parentPath;
-                    if (rm.key === 'expression') {
-                        rm = rm.parentPath;
-                    }
-                    rm.remove();
-                } else {
-                    console.warn(`意外的引用键: ${ref.key}`);
-                }
-            }
-        }
-    },
-    
-    // 解锁调试器保护
-    unlockDebugger: function(path) {
-        const decl_path = path.getFunctionParent()?.getFunctionParent();
-        if (!decl_path) {
-            return;
-        }
-        
-        // 检查是否包含无限循环
-        let valid = false;
-        path.getFunctionParent().traverse({
-            WhileStatement(path) {
-                if (t.isBooleanLiteral(path.node.test) && path.node.test.value) {
-                    valid = true;
-                }
-            },
-        });
-        if (!valid) {
-            return;
-        }
-        
-        const name = decl_path.node.id.name;
-        const bind = decl_path.scope.getBinding(name);
-        console.info(`调试测试和无限循环: ${name}`);
-        
-        for (let ref of bind.referencePaths) {
-            if (ref.findParent((path) => path.removed)) {
-                continue;
-            }
-            if (ref.listKey === 'arguments') {
-                // setInterval
-                let rm = ref.getFunctionParent().parentPath;
-                if (rm.key === 'expression') {
-                    rm = rm.parentPath;
-                }
-                rm.remove();
-            } else if (ref.key === 'callee') {
-                // 这个方法的lint测试
-                let rm = ref.getFunctionParent();
-                this.removeUniqueCall(rm);
-            } else {
-                console.warn(`意外的引用键: ${ref.key}`);
-            }
-        }
-        
-        decl_path.remove();
-        path.stop();
-    },
-    
-    // 解锁控制台保护
-    unlockConsole: function(path) {
-        if (!t.isArrayExpression(path.node.init)) {
-            return;
-        }
-        
-        let pattern = 'log|warn|debug|info|error|exception|table|trace';
-        let count = 0;
-        for (let ele of path.node.init.elements) {
-            if (ele && ele.value && pattern.indexOf(ele.value) !== -1) {
-                ++count;
-                continue;
-            }
-            return;
-        }
-        if (count < 5) {
-            return;
-        }
-        
-        let left1 = path.getSibling(0);
-        const code = generator(left1.node, { minified: true }).code;
-        pattern = ['window', 'process', 'require', 'global'];
-        pattern.map((key) => {
-            if (code.indexOf(key) == -1) {
+        // 查找模式1：直接寻找主字符串数组函数
+        function findMainStringArrayFunction(path) {
+            if (path.getFunctionParent()) {
                 return;
             }
+            
+            if (!t.isIdentifier(path.node.id) || 
+                path.node.params.length || 
+                !t.isBlockStatement(path.node.body)) {
+                return;
+            }
+            
+            const body = path.node.body.body;
+            if (body.length < 2 || body.length > 3) {
+                return;
+            }
+            
+            // 检查函数体特征
+            try {
+                // 第一个语句通常是定义字符串数组
+                if (!t.isVariableDeclaration(body[0]) ||
+                    body[0].declarations.length != 1 ||
+                    !t.isArrayExpression(body[0].declarations[0].init)) {
+                    return;
+                }
+                
+                const arrayName = body[0].declarations[0].id.name;
+                const funcName = path.node.id.name;
+                
+                // 判断是否是字符串数组函数
+                const code = generator(path.node, optGenMin).code;
+                if (!code.includes("return") || !code.includes(arrayName)) {
+                    return;
+                }
+                
+                // 找到了可能的字符串数组函数
+                result.stringArrayName = funcName;
+                result.stringArrayCodes.push(generator(path.node, optGenMin).code);
+                
+                // 查找解密函数
+                const binding = path.scope.getBinding(funcName);
+                if (binding && binding.referencePaths) {
+                    for (let ref of binding.referencePaths) {
+                        if (ref.findParent(p => p.removed)) {
+                            continue;
+                        }
+                        
+                        if (ref.parentPath.isCallExpression() && 
+                            ref.key === 'callee') {
+                            // 找到解密函数
+                            let decodePath = ref.getFunctionParent();
+                            if (decodePath && decodePath.node.id) {
+                                const decodeName = decodePath.node.id.name;
+                                result.stringArrayCodes.push(generator(decodePath.node, optGenMin).code);
+                                result.stringArrayCalls.push({
+                                    name: decodeName,
+                                    path: decodePath
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                path.stop();
+                path.remove();
+            } catch (e) {
+                return;
+            }
+        }
+        
+        traverse(ast, { FunctionDeclaration: findMainStringArrayFunction });
+        
+        // 如果找不到主函数，尝试查找直接的字符串数组
+        if (!result.stringArrayName) {
+            function findStringArrayDirect(path) {
+                if (path.getFunctionParent()) {
+                    return;
+                }
+                
+                const init = path.get('init');
+                if (!init.isArrayExpression()) {
+                    return;
+                }
+                
+                // 确保数组元素都是字符串
+                const elements = init.node.elements;
+                if (!elements.length || !elements.every(el => t.isStringLiteral(el))) {
+                    return;
+                }
+                
+                const arrayName = path.node.id.name;
+                
+                // 查找相关的解码函数
+                const binding = path.scope.getBinding(arrayName);
+                if (binding && binding.referencePaths) {
+                    let validRefs = true;
+                    let decodeFunctions = [];
+                    
+                    for (let ref of binding.referencePaths) {
+                        if (ref.parentPath.isMemberExpression() && 
+                            ref.key === 'object') {
+                            // 找到可能的解码函数
+                            const decodePath = ref.getFunctionParent();
+                            if (decodePath && decodePath.node.id) {
+                                decodeFunctions.push({
+                                    name: decodePath.node.id.name,
+                                    path: decodePath
+                                });
+                            } else {
+                                validRefs = false;
+                            }
+                        } else {
+                            validRefs = false;
+                        }
+                    }
+                    
+                    if (validRefs && decodeFunctions.length) {
+                        result.stringArrayName = arrayName;
+                        result.stringArrayCodes.push(
+                            generator(t.variableDeclaration('var', [path.node]), optGenMin).code
+                        );
+                        
+                        for (let func of decodeFunctions) {
+                            result.stringArrayCodes.push(
+                                generator(func.path.node, optGenMin).code
+                            );
+                            result.stringArrayCalls.push(func);
+                        }
+                        
+                        path.stop();
+                        path.remove();
+                    }
+                }
+            }
+            
+            traverse(ast, { VariableDeclarator: findStringArrayDirect });
+        }
+        
+        return result;
+    },
+    
+    // 替换字符串调用
+    replaceStringCalls: function(stack, item) {
+        stack.push(item);
+        const currentName = item.name;
+        console.log(`进入子函数 ${stack.length}:${currentName}`);
+        
+        // 构建执行环境
+        let codePrefix = '';
+        for (let parent of stack) {
+            codePrefix += parent.code + ';';
+        }
+        this.virtualGlobalEval(codePrefix);
+        
+        // 查找所有引用并替换
+        let scope = item.path.scope;
+        if (item.path.isFunctionDeclaration()) {
+            scope = item.path.parentPath.scope;
+        }
+        
+        const binding = scope.getBinding(currentName);
+        binding.scope.crawl();
+        
+        const refs = binding.referencePaths;
+        const nextRefs = [];
+        
+        for (let ref of refs) {
+            const parent = ref.parentPath;
+            if (ref.key === 'callee') {
+                // CallExpression
+                let callExpression = parent.toString();
+                try {
+                    // 尝试直接执行调用并替换为字符串
+                    let result = this.virtualGlobalEval(callExpression);
+                    console.log(`替换: ${callExpression} -> ${result}`);
+                    parent.replaceWith(t.stringLiteral(result));
+                } catch (e) {
+                    // 执行失败，可能是更复杂的嵌套函数
+                    console.log(`子函数调用: ${callExpression}`);
+                    const child = this.getChildFunction(parent);
+                    if (child) {
+                        nextRefs.push(child);
+                    }
+                }
+            } else if (ref.key === 'init' || ref.key === 'right') {
+                // 变量声明或赋值
+                let nextName = '';
+                let nextPath = null;
+                let code = '';
+                
+                if (ref.key === 'init') {
+                    // VariableDeclarator
+                    nextName = ref.parent.id.name;
+                    nextPath = ref.parentPath;
+                    code = 'var ' + nextPath.toString();
+                } else {
+                    // AssignmentExpression
+                    nextName = ref.parent.left.name;
+                    nextPath = ref.parentPath;
+                    code = 'var ' + nextPath.toString();
+                }
+                
+                nextRefs.push({
+                    name: nextName,
+                    path: nextPath,
+                    code: code
+                });
+            }
+        }
+        
+        // 递归处理所有子引用
+        for (let ref of nextRefs) {
+            this.replaceStringCalls(stack, ref);
+        }
+        
+        binding.scope.crawl();
+        console.log(`退出子函数 ${stack.length}:${currentName}`);
+        stack.pop();
+        
+        // 处理完成后移除函数
+        if (!item.path.parentPath.isCallExpression()) {
+            item.path.remove();
+            binding.scope.crawl();
+            return;
+        }
+        
+        // 处理赋值表达式中的特殊情况
+        item.path.replaceWith(t.identifier(currentName));
+        item.path = binding.path;
+        binding.scope.crawl();
+        this.replaceStringCalls(stack, item);
+    },
+    
+    // 获取子函数信息
+    getChildFunction: function(path) {
+        if (path.key !== 'argument' || !path.parentPath.isReturnStatement()) {
+            console.error(`意外的链式调用: ${path}`);
+            return null;
+        }
+        
+        const func = path.getFunctionParent();
+        let name = func.node.id?.name;
+        let root;
+        let code;
+        
+        if (name) {
+            // 函数声明
+            root = func;
+            code = generator(root.node, optGenMin).code;
+        } else {
+            // 函数表达式
+            root = func.parentPath;
+            code = generator(t.variableDeclaration('var', [root.node]), optGenMin).code;
+            name = root.node.id.name;
+        }
+        
+        return {
+            name: name,
+            path: root,
+            code: code
+        };
+    },
+    
+    // 简单的字符串数组解密
+    simpleStringArrayDecode: function(ast) {
+        const visitor = {
+            VariableDeclarator(path) {
+                const name = path.node.id.name;
+                if (!path.get('init').isArrayExpression()) {
+                    return;
+                }
+                
+                const elements = path.node.init.elements;
+                for (const element of elements) {
+                    if (!t.isLiteral(element)) {
+                        return;
+                    }
+                }
+                
+                const bind = path.scope.getBinding(name);
+                if (!bind.constant) {
+                    return;
+                }
+                
+                let validReferences = true;
+                for (const ref of bind.referencePaths) {
+                    if (!ref.parentPath.isMemberExpression() || 
+                        ref.key !== 'object' || 
+                        ref.parentPath.key === 'left' || 
+                        !t.isNumericLiteral(ref.parent.property)) {
+                        validReferences = false;
+                        break;
+                    }
+                }
+                
+                if (!validReferences) {
+                    return;
+                }
+                
+                console.log(`提取字符串数组: ${name}`);
+                for (const ref of bind.referencePaths) {
+                    const index = ref.parent.property.value;
+                    if (index < elements.length) {
+                        ref.parentPath.replaceWith(elements[index]);
+                    }
+                }
+                
+                bind.scope.crawl();
+                path.remove();
+            }
+        };
+        
+        traverse(ast, visitor);
+    },
+    
+    // 还原控制流平坦化
+    restoreControlFlow: function(ast) {
+        // 查找控制流平坦化模式并还原
+        function cleanFlattenedControlFlow(path) {
+            const node = path.node;
+            
+            // 检查是否为控制流平坦化的while循环
+            let valid = false;
+            if (t.isBooleanLiteral(node.test) && node.test.value) {
+                valid = true;
+            }
+            if (t.isArrayExpression(node.test) && node.test.elements.length === 0) {
+                valid = true;
+            }
+            if (!valid) {
+                return;
+            }
+            
+            if (!t.isBlockStatement(node.body)) {
+                return;
+            }
+            
+            const body = node.body.body;
+            if (body.length < 2 || 
+                !t.isSwitchStatement(body[0]) || 
+                !t.isMemberExpression(body[0].discriminant)) {
+                return;
+            }
+            
+            // 获取switch语句的控制变量
+            const switchStmt = body[0];
+            let arrayName, indexName;
+            
+            try {
+                arrayName = switchStmt.discriminant.object.name;
+                indexName = switchStmt.discriminant.property.argument?.name;
+                
+                if (!arrayName || !indexName) {
+                    return;
+                }
+            } catch (e) {
+                return;
+            }
+            
+            // 查找控制数组和索引变量定义
+            let controlArray = [];
+            let removePaths = [];
+            
+            path.getAllPrevSiblings().forEach((prePath) => {
+                if (!prePath.isVariableDeclaration()) {
+                    return;
+                }
+                
+                for (let i = 0; i < prePath.node.declarations.length; i++) {
+                    const declaration = prePath.get(`declarations.${i}`);
+                    const { id, init } = declaration.node;
+                    
+                    if (arrayName === id.name) {
+                        // 找到控制数组
+                        if (t.isCallExpression(init) && 
+                            t.isMemberExpression(init.callee) && 
+                            t.isStringLiteral(init.callee.object)) {
+                            controlArray = init.callee.object.value.split('|');
+                            removePaths.push(declaration);
+                        }
+                    }
+                    
+                    if (indexName === id.name) {
+                        // 找到索引变量
+                        if (t.isLiteral(init)) {
+                            removePaths.push(declaration);
+                        }
+                    }
+                }
+            });
+            
+            if (removePaths.length !== 2 || !controlArray.length) {
+                return;
+            }
+            
+            // 移除控制变量定义
+            removePaths.forEach(path => path.remove());
+            console.log(`还原控制流平坦化: ${arrayName}[${indexName}]`);
+            
+            // 重建控制流
+            const caseList = switchStmt.cases;
+            let resultBody = [];
+            
+            // 按照控制数组顺序执行case语句
+            controlArray.forEach(targetIndex => {
+                let continueLoop = true;
+                let idx = parseInt(targetIndex);
+                
+                while (continueLoop && idx < caseList.length) {
+                    const currentCase = caseList[idx];
+                    const test = currentCase.test;
+                    const consequence = currentCase.consequent;
+                    
+                    // 验证case标签是否与预期一致
+                    if (!t.isStringLiteral(test) || parseInt(test.value) !== idx) {
+                        console.log(`控制流中的乱序标签: ${test.value}:${idx}`);
+                    }
+                    
+                    // 处理case语句体
+                    for (let i = 0; i < consequence.length; i++) {
+                        const stmt = consequence[i];
+                        
+                        if (t.isContinueStatement(stmt)) {
+                            // continue语句表示转到下一个控制流索引
+                            continueLoop = false;
+                            break;
+                        } else if (t.isReturnStatement(stmt)) {
+                            // return语句终止控制流
+                            continueLoop = false;
+                            resultBody.push(stmt);
+                            break;
+                        } else if (t.isBreakStatement(stmt)) {
+                            console.log(`控制流中意外的break语句: ${arrayName}[${indexName}]`);
+                        } else {
+                            // 添加正常语句到结果
+                            resultBody.push(stmt);
+                        }
+                    }
+                    
+                    idx++;
+                }
+            });
+            
+            // 用重建的代码块替换原while语句
+            path.replaceWithMultiple(resultBody);
+        }
+        
+        traverse(ast, {
+            WhileStatement: { exit: cleanFlattenedControlFlow }
         });
+        
+        // 处理for循环形式的控制流平坦化
+        function cleanForLoopFlattening(path) {
+            const node = path.node;
+            
+            // 检查是否为控制流平坦化的for循环
+            if (!t.isBlockStatement(node.body) || 
+                !node.init || 
+                !node.test || 
+                !node.update) {
+                return;
+            }
+            
+            const body = node.body.body;
+            if (body.length < 1 || !t.isSwitchStatement(body[0])) {
+                return;
+            }
+            
+            // 获取switch语句的控制变量
+            const switchStmt = body[0];
+            if (!t.isMemberExpression(switchStmt.discriminant)) {
+                return;
+            }
+            
+            let arrayName, indexName;
+            
+            try {
+                arrayName = switchStmt.discriminant.object.name;
+                indexName = node.init.declarations[0]?.id.name;
+                
+                if (!arrayName || !indexName || 
+                    switchStmt.discriminant.property.name !== indexName) {
+                    return;
+                }
+            } catch (e) {
+                return;
+            }
+            
+            // 查找控制数组定义
+            let controlArray = [];
+            let arrayPath = null;
+            
+            path.getAllPrevSiblings().forEach((prePath) => {
+                if (!prePath.isVariableDeclaration()) {
+                    return;
+                }
+                
+                for (let i = 0; i < prePath.node.declarations.length; i++) {
+                    const declaration = prePath.get(`declarations.${i}`);
+                    const { id, init } = declaration.node;
+                    
+                    if (arrayName === id.name && t.isArrayExpression(init)) {
+                        // 尝试解析控制数组
+                        try {
+                            controlArray = init.elements.map(el => {
+                                if (t.isNumericLiteral(el)) {
+                                    return el.value.toString();
+                                } else if (t.isStringLiteral(el)) {
+                                    return el.value;
+                                }
+                                return null;
+                            }).filter(x => x !== null);
+                            
+                            arrayPath = declaration;
+                        } catch (e) {
+                            return;
+                        }
+                    }
+                }
+            });
+            
+            if (!arrayPath || !controlArray.length) {
+                return;
+            }
+            
+            // 移除控制数组定义
+            arrayPath.remove();
+            console.log(`还原For循环控制流平坦化: ${arrayName}[${indexName}]`);
+            
+            // 重建控制流（类似while循环处理）
+            const caseList = switchStmt.cases;
+            let resultBody = [];
+            
+            // 按照控制数组顺序执行case语句
+            controlArray.forEach(targetIndex => {
+                let idx = parseInt(targetIndex);
+                if (isNaN(idx) || idx >= caseList.length) {
+                    return;
+                }
+                
+                const currentCase = caseList[idx];
+                const consequence = currentCase.consequent;
+                
+                // 处理case语句体
+                for (let i = 0; i < consequence.length; i++) {
+                    const stmt = consequence[i];
+                    
+                    if (t.isContinueStatement(stmt)) {
+                        // 忽略continue语句
+                        continue;
+                    } else if (t.isBreakStatement(stmt)) {
+                        // 忽略break语句
+                        continue;
+                    } else {
+                        // 添加正常语句到结果
+                        resultBody.push(stmt);
+                    }
+                }
+            });
+            
+            // 用重建的代码块替换原for循环
+            path.replaceWithMultiple(resultBody);
+        }
+        
+        traverse(ast, {
+            ForStatement: { exit: cleanForLoopFlattening }
+        });
+    },
+    
+    // 解除调试器保护
+    unlockDebugger: function(path) {
+        if (path.findParent((up) => up.removed)) {
+            return;
+        }
         
         let rm = path.getFunctionParent();
         this.removeUniqueCall(rm);
+    },
+    
+    // 解除控制台输出保护
+    unlockConsole: function(path) {
+        if (path.findParent((up) => up.removed)) {
+            return;
+        }
+        
+        const node = path.node;
+        if (!t.isObjectPattern(node.id)) {
+            return;
+        }
+        
+        const props = node.id.properties;
+        if (props.length < 4) {
+            return;
+        }
+        
+        const check = ['log', 'warn', 'info', 'error'];
+        const actual = props.map(p => p.key.name || p.key.value);
+        
+        if (check.every(c => actual.includes(c))) {
+            let rm = path.getFunctionParent();
+            this.removeUniqueCall(rm);
+        }
     },
     
     // 解锁lint保护
@@ -906,6 +831,49 @@ window.DecodePlugins.jsjiamiV7 = {
         traverse(ast, { 
             ArrayExpression: this.unlockDomainLock.bind(this)
         });
+    },
+    
+    // 移除唯一调用
+    removeUniqueCall: function(path) {
+        if (!path || path.removed) {
+            return;
+        }
+        
+        // 获取函数名或变量名
+        let funcName = null;
+        if (path.isFunctionDeclaration()) {
+            funcName = path.node.id.name;
+        } else if (path.isVariableDeclarator()) {
+            funcName = path.node.id.name;
+        } else {
+            return;
+        }
+        
+        if (!funcName) {
+            return;
+        }
+        
+        // 检查引用
+        const binding = path.scope.getBinding(funcName);
+        if (!binding) {
+            return;
+        }
+        
+        // 删除所有调用
+        for (let ref of binding.referencePaths) {
+            if (ref.key === 'callee') {
+                const callPath = ref.parentPath;
+                if (callPath.parentPath.isExpressionStatement()) {
+                    callPath.parentPath.remove();
+                } else {
+                    callPath.remove();
+                }
+            }
+        }
+        
+        // 删除函数定义
+        path.remove();
+        console.log(`已移除保护函数: ${funcName}`);
     },
     
     // 净化简单函数(转换为表达式)
@@ -1053,7 +1021,46 @@ window.DecodePlugins.jsjiamiV7 = {
             },
         });
         
-        // 删除未使用的变量
+        // 标准化if语句
+        traverse(ast, {
+            IfStatement: (path) => {
+                const consequent = path.get('consequent');
+                const alternate = path.get('alternate');
+                
+                // 将单语句转换为代码块
+                if (!consequent.isBlockStatement()) {
+                    consequent.replaceWith(t.blockStatement([consequent.node]));
+                }
+                
+                if (alternate.node !== null && !alternate.isBlockStatement()) {
+                    alternate.replaceWith(t.blockStatement([alternate.node]));
+                }
+                
+                // 简化空的if语句
+                if (consequent.node.body.length === 0) {
+                    if (alternate.node === null) {
+                        path.replaceWith(path.get('test').node);
+                    } else {
+                        consequent.replaceWith(alternate.node);
+                        alternate.remove();
+                        path.node.alternate = null;
+                        path.get('test').replaceWith(
+                            t.unaryExpression('!', path.get('test').node, true)
+                        );
+                    }
+                }
+                
+                // 移除空的else语句
+                if (alternate.isBlockStatement() && alternate.node.body.length === 0) {
+                    alternate.remove();
+                    path.node.alternate = null;
+                }
+            }
+        });
+    },
+    
+    // 删除未使用的变量
+    removeUnusedVars: function(ast) {
         traverse(ast, {
             VariableDeclarator(path) {
                 const binding = path.scope.getBinding(path.node.id.name);
@@ -1075,7 +1082,8 @@ window.DecodePlugins.jsjiamiV7 = {
     // 虚拟全局求值
     virtualGlobalEval: function(jsStr) {
         try {
-            // 使用Function构造函数来执行代码，可以替换为更安全的实现
+            // 这里应该使用您的框架中的virtualGlobalEval函数
+            // 为了与您的代码集成，我们假设该函数已经存在
             return new Function('return ' + jsStr)();
         } catch (e) {
             console.error("virtualGlobalEval执行错误:", e);
@@ -1086,7 +1094,6 @@ window.DecodePlugins.jsjiamiV7 = {
     // 一次性求值
     evalOneTime: function(str) {
         try {
-            // 使用Function构造函数来执行代码，可以替换为更安全的实现
             return new Function('return ' + str)();
         } catch (e) {
             console.error("evalOneTime执行错误:", e);
