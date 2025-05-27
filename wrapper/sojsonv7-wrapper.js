@@ -1,307 +1,80 @@
-// SOJSON v7混淆解密插件 - 稳定挂载版
-(function() {
-  console.log("SOJSON v7解密插件(稳定挂载版)加载中...");
-  
-  // 确保在页面完全加载后执行
-  function ensureLoaded(callback) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', callback);
-    } else {
-      setTimeout(callback, 0);
-    }
-  }
-  
-  // 初始化插件
-  ensureLoaded(function() {
-    // 先确保DecodePlugins对象存在
-    if (!window.DecodePlugins) {
-      window.DecodePlugins = {};
-    }
-    
-    // 定义SOJSON v7解密插件
-    window.DecodePlugins.sojsonv7 = {
-      detect: function(code) {
-        if (!code || typeof code !== 'string') return false;
-        
-        // 检测jsjiami.com.v7特征
-        return code.indexOf('jsjiami.com.v7') !== -1 || 
-               (code.indexOf('_0x') !== -1 && 
-                code.indexOf('function _0x') !== -1);
-      },
-      
-      plugin: function(code) {
+console.log("SOJSON v7解密插件(增强版-Web)加载中...");
+
+if (!window.DecodePlugins) {
+    window.DecodePlugins = {};
+}
+
+window.DecodePlugins.sojsonv7 = {
+    detect(code) {
+        return (
+            typeof code === 'string' &&
+            (code.includes('jsjiami.com.v7') ||
+             code.includes('jsjiami.com.v5') ||
+             (code.includes('_0x') && code.includes('function _0x')))
+        );
+    },
+
+    plugin(code) {
         try {
-          if (!this.detect(code)) {
-            return code;
-          }
-          
-          console.log("开始处理SOJSON v7加密代码");
-          
-          // 备份原始代码以检测是否有变化
-          var originalCode = code;
-          
-          // 阶段1: 解码十六进制字符串
-          code = this.decodeHexStrings(code);
-          
-          // 阶段2: 提取字符串数组
-          var stringArrayInfo = this.extractStringArray(code);
-          
-          // 阶段3: 定位并分析_0x46b1函数
-          var _0x46b1Info = this.analyze_0x46b1Function(code);
-          
-          // 阶段4: 替换字符串引用
-          if (stringArrayInfo.array && stringArrayInfo.array.length > 0) {
-            code = this.replaceStringArrayReferences(code, stringArrayInfo, _0x46b1Info);
-          }
-          
-          // 阶段5: 清理代码
-          code = this.cleanCode(code);
-          
-          // 添加解密标记
-          var timestamp = new Date().toLocaleString();
-          code = "/*\n * SOJSON v7 (jsjiami.com.v7) 解密结果\n * 解密时间: " + timestamp + "\n */\n\n" + code;
-          
-          // 检测代码是否有变化
-          if (code === originalCode) {
-            console.log("SOJSON v7代码没有变化，可能需要更高级的解密方法");
-          } else {
-            console.log("SOJSON v7代码解密成功");
-          }
-          
-          return code;
+            if (!this.detect(code)) return code;
+
+            console.log("SOJSON v7检测成功，开始解密...");
+
+            const arrayInfo = this.extractHexArray(code);
+            if (!arrayInfo.found) {
+                console.warn("未找到混淆数组，跳过还原。");
+                return code;
+            }
+
+            const { name, array, raw } = arrayInfo;
+
+            // 替换函数调用（如 _0x123(0x1a) => 对应的解码值）
+            const replacedCode = code.replace(
+                new RegExp(name + `\$begin:math:text$(0x[0-9a-fA-F]+)\\$end:math:text$`, 'g'),
+                (_, hex) => {
+                    const index = parseInt(hex, 16);
+                    return JSON.stringify(array[index] || '');
+                }
+            );
+
+            // 可选：去除原始数组定义和函数
+            const cleaned = replacedCode.replace(raw, '/* 字符串数组已解密并替换 */');
+
+            return `/* 解密成功: SOJSON v7 - ${new Date().toLocaleString()} */\n\n` + cleaned;
+
         } catch (e) {
-          console.error("SOJSON v7解密错误:", e);
-          // 出错时返回原始代码
-          return code;
+            return `/* 解密错误: ${e.message} */\n\n` + code;
         }
-      },
-      
-      // 解码十六进制字符串
-      decodeHexStrings: function(code) {
-        // 处理版本字符串
-        code = code.replace(/var\s+version_\s*=\s*(['"])\\x([0-9a-fA-F]{2})((?:\\x[0-9a-fA-F]{2})+?)(['"])/g, 
-          function(match, q1, firstHex, restHex, q2) {
-            try {
-              let decoded = String.fromCharCode(parseInt(firstHex, 16));
-              let parts = restHex.split('\\x');
-              for (let i = 0; i < parts.length; i++) {
-                if (parts[i] && parts[i].length >= 2) {
-                  decoded += String.fromCharCode(parseInt(parts[i].substring(0, 2), 16));
-                }
-              }
-              return "var version_ = " + q1 + decoded + q2 + "; /* 已解码 */";
-            } catch (e) {
-              return match;
-            }
-          }
-        );
-        
-        // 处理其他十六进制编码字符串
-        code = code.replace(/(['"])\\x([0-9a-fA-F]{2})((?:\\x[0-9a-fA-F]{2})+?)(['"])/g,
-          function(match, q1, firstHex, restHex, q2) {
-            try {
-              let decoded = String.fromCharCode(parseInt(firstHex, 16));
-              let parts = restHex.split('\\x');
-              for (let i = 0; i < parts.length; i++) {
-                if (parts[i] && parts[i].length >= 2) {
-                  decoded += String.fromCharCode(parseInt(parts[i].substring(0, 2), 16));
-                }
-              }
-              return q1 + decoded + q2;
-            } catch (e) {
-              return match;
-            }
-          }
-        );
-        
-        return code;
-      },
-      
-      // 提取字符串数组
-      extractStringArray: function(code) {
-        var result = {
-          found: false,
-          name: null,
-          array: null
+    },
+
+    extractHexArray(code) {
+        const result = {
+            found: false,
+            name: null,
+            array: [],
+            raw: ''
         };
-        
-        // 正则表达式以查找定义数组的地方
-        var arrayMatch = code.match(/function\s+(_0x[a-f0-9]+)\s*\(\s*\)\s*\{\s*var\s+(_0x[a-f0-9]+)\s*=\s*\[\s*((?:'[^']*'|"[^"]*"|`[^`]*`|\s*,\s*)*)\s*\]/);
-        
-        if (arrayMatch) {
-          result.found = true;
-          result.name = arrayMatch[1]; // 函数名，通常是 _0x46b1
-          
-          try {
-            var arrayStr = "[" + arrayMatch[3] + "]";
-            // 安全地求值数组字符串
-            var array = new Function("return " + arrayStr)();
-            result.array = array;
-            console.log("成功提取字符串数组，包含 " + array.length + " 项");
-          } catch (e) {
-            console.log("提取字符串数组失败:", e);
-          }
-        }
-        
+
+        // 尝试匹配数组函数（_0x123=function(){...;var _0x456=['\x61\x62',...]; return _0x456; })
+        const match = code.match(/var\s+(\w+)\s*=\s*\[\s*((?:'\\x[a-fA-F0-9]+'(?:\s*,\s*)?)*)\s*\]/);
+        if (!match) return result;
+
+        const nameMatch = code.match(/function\s+(\w+)\s*\(\w+\)\s*\{\s*return\s+\1\[\w+\];?\s*\}/);
+        const name = nameMatch ? nameMatch[1] : null;
+
+        const rawArrayString = match[2];
+        const array = rawArrayString.split(/,\s*/).map(s => {
+            try {
+                return decodeURIComponent(s.trim().slice(1, -1).replace(/\\x/g, '%'));
+            } catch (e) {
+                return s;
+            }
+        });
+
+        result.found = true;
+        result.name = name || match[1];
+        result.array = array;
+        result.raw = match[0];
         return result;
-      },
-      
-      // 分析 _0x46b1 函数
-      analyze_0x46b1Function: function(code) {
-        var result = {
-          found: false,
-          name: null,
-          baseOffset: null
-        };
-        
-        // 查找 _0x46b1 函数的完整定义
-        var funcMatch = code.match(/function\s+(_0x[a-f0-9]+)\s*\(\s*\)\s*\{[\s\S]+?return\s+(_0x[a-f0-9]+);?\s*\}/);
-        if (funcMatch) {
-          result.found = true;
-          result.name = funcMatch[1];
-          
-          // 查找偏移计算模式
-          var offsetMatch = code.match(/(_0x[a-f0-9]+)=(_0x[a-f0-9]+)-\s*(0x[a-f0-9]+)/);
-          if (offsetMatch) {
-            try {
-              result.baseOffset = parseInt(offsetMatch[3], 16);
-              console.log("找到基础偏移值: " + result.baseOffset);
-            } catch (e) {
-              console.log("解析基础偏移值失败:", e);
-              // 使用默认偏移值
-              result.baseOffset = 0x18f;
-            }
-          } else {
-            // 使用默认偏移值
-            result.baseOffset = 0x18f;
-          }
-        }
-        
-        return result;
-      },
-      
-      // 替换字符串数组引用
-      replaceStringArrayReferences: function(code, stringArrayInfo, _0x46b1Info) {
-        if (!stringArrayInfo.found || !stringArrayInfo.array || !_0x46b1Info.found) {
-          return code;
-        }
-        
-        var array = stringArrayInfo.array;
-        var baseOffset = _0x46b1Info.baseOffset || 0x18f; // 默认偏移值
-        
-        // 替换直接数组引用，如 _0x46b1[0]
-        for (var i = 0; i < array.length; i++) {
-          if (typeof array[i] === 'string') {
-            var pattern = new RegExp(this.escapeRegExp(stringArrayInfo.name) + '\\s*\\[\\s*' + i + '\\s*\\]', 'g');
-            code = code.replace(pattern, "'" + array[i].replace(/'/g, "\\'") + "'");
-          }
-        }
-        
-        // 替换通过函数调用引用的数组项，如 _0x46b1(0x18f)
-        var funcCallPattern = new RegExp(this.escapeRegExp(stringArrayInfo.name) + '\\s*\\(\\s*(0x[a-f0-9]+)\\s*\\)', 'g');
-        var match;
-        var tmpCode = code;
-        var matches = [];
-        
-        // 找到所有匹配项
-        while ((match = funcCallPattern.exec(tmpCode)) !== null) {
-          matches.push({
-            fullMatch: match[0],
-            hexValue: match[1]
-          });
-        }
-        
-        // 处理每个匹配项
-        for (var j = 0; j < matches.length; j++) {
-          try {
-            var hexValue = matches[j].hexValue;
-            var index = parseInt(hexValue, 16) - baseOffset;
-            
-            if (index >= 0 && index < array.length && typeof array[index] === 'string') {
-              var newValue = "'" + array[index].replace(/'/g, "\\'") + "'";
-              var fullMatch = matches[j].fullMatch;
-              // 使用字符串替换而不是正则表达式，避免潜在问题
-              code = code.split(fullMatch).join(newValue);
-            }
-          } catch (e) {
-            console.log("替换函数调用时出错:", e);
-          }
-        }
-        
-        return code;
-      },
-      
-      // 清理代码
-      cleanCode: function(code) {
-        // 移除多余的注释和空行
-        code = code.replace(/\/\*\s*\*\//g, '');
-        code = code.replace(/\n{3,}/g, '\n\n');
-        
-        return code;
-      },
-      
-      // 辅助函数：转义正则表达式特殊字符
-      escapeRegExp: function(string) {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      }
-    };
-    
-    // 创建全局快捷函数
-    window.decodeSojson = function(code) {
-      return window.DecodePlugins.sojsonv7.plugin(code);
-    };
-    
-    // 创建最简单的UI（只在非移动设备上显示）
-    try {
-      // 检测是否为移动设备
-      var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      
-      if (!isMobile) {
-        // 桌面设备才显示按钮
-        var btn = document.createElement('button');
-        btn.textContent = '解密SOJSON';
-        btn.style.position = 'fixed';
-        btn.style.bottom = '10px';
-        btn.style.right = '10px';
-        btn.style.zIndex = '9999';
-        btn.style.backgroundColor = '#4285f4';
-        btn.style.color = 'white';
-        btn.style.border = 'none';
-        btn.style.padding = '8px 12px';
-        btn.style.borderRadius = '4px';
-        btn.style.cursor = 'pointer';
-        
-        // 添加按钮到页面
-        document.body.appendChild(btn);
-        
-        // 点击按钮显示输入框
-        btn.onclick = function() {
-          var code = prompt('请粘贴需要解密的SOJSON v7代码:');
-          if (code) {
-            try {
-              var result = window.decodeSojson(code);
-              var resultWindow = window.open('', '_blank');
-              if (resultWindow) {
-                resultWindow.document.write('<pre>' + result.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>');
-                resultWindow.document.title = 'SOJSON v7解密结果';
-                alert('解密完成，结果已在新窗口中打开');
-              } else {
-                alert('打开新窗口失败，请检查浏览器设置是否允许弹出窗口');
-                // 备用方案：使用console.log
-                console.log('--- SOJSON v7解密结果 ---');
-                console.log(result);
-              }
-            } catch (e) {
-              alert('解密出错: ' + e.message);
-            }
-          }
-        };
-      }
-    } catch (e) {
-      console.error("创建UI失败:", e);
     }
-    
-    console.log("SOJSON v7解密插件(稳定挂载版)加载完成");
-    console.log("您可以使用全局函数 decodeSojson(代码) 进行解密");
-  });
-})();
+};
