@@ -1,54 +1,48 @@
-console.log("🟢 SOJSON v5 数组插件加载中");
+console.log("🟢 SOJSON v5（数组还原）插件已挂载");
 
-if (!window.DecodePlugins) window.DecodePlugins = {};
+window.DecodePlugins ||= {};
 
 window.DecodePlugins.sojsonv5_array = {
+  // 判断是否是 sojsonv5 样式
   detect(code) {
-    return typeof code === "string" && /var\s+[_$a-zA-Z][_$a-zA-Z0-9]*\s*=\s*\[\s*(?:'\\x[a-fA-F0-9]{2})/.test(code);
+    return typeof code === "string" &&
+      code.includes("jsjiami.com.v5") &&
+      /var\s+[_$a-zA-Z][_$a-zA-Z0-9]*\s*=\s*\[\s*(?:'\\x[a-fA-F0-9]{2})/.test(code);
   },
 
+  // 插件主处理函数
   plugin(code) {
     try {
-      const arrMatch = code.match(/var\s+([_$a-zA-Z][_$a-zA-Z0-9]*)\s*=\s*(\[[^\]]+\])/);
-      if (!arrMatch) return `/* ❌ 未匹配到数组定义 */\n` + code;
+      // 获取混淆数组变量名及内容
+      const match = code.match(/var\s+([_$a-zA-Z][_$a-zA-Z0-9]*)\s*=\s*(\[[^\]]+\])/);
+      if (!match) return "/* ❌ 未识别混淆数组 */\n" + code;
 
-      const [rawDef, varName, arrayRaw] = arrMatch;
+      const [fullDef, varName, rawArr] = match;
 
-      // 尝试还原数组（注意：不要执行不可信内容）
-      let decodedArray;
+      let arr;
       try {
-        decodedArray = eval(arrayRaw); // 仅限可信内容
+        arr = eval(rawArr); // ⚠️仅限可信内容页面，否则需用 safer parse
       } catch (e) {
-        return `/* ❌ 数组 eval 失败：${e.message} */\n` + code;
+        return `/* ❌ 混淆数组解析失败：${e.message} */\n` + code;
       }
 
-      // 解码函数（自动 utf-8、base64）
-      function smartDecode(str) {
-        try {
-          const b64 = atob(str);
-          return decodeURIComponent(escape(b64));
-        } catch {
-          return str;
-        }
-      }
-
-      // 解码所有数组元素
-      const decodedMap = decodedArray.map(s => smartDecode(s));
-
-      // 替换类似 _0x1234[0x1a] 的调用
-      const newCode = code.replace(
+      // 替换变量调用：_0x1234[0x1a]
+      let replacedCode = code.replace(
         new RegExp(`${varName}\$begin:math:display$(0x[\\\\da-fA-F]+)\\$end:math:display$`, "g"),
         (_, hex) => {
           const index = parseInt(hex, 16);
-          const val = decodedMap[index];
-          return val ? JSON.stringify(val) : '""';
+          const val = arr[index];
+          return typeof val === "string" ? JSON.stringify(val) : '""';
         }
-      ).replace(rawDef, `/* ✅ 数组 [${varName}] 已解码并移除 */`);
+      );
 
-      return `/* ✅ 解密成功：sojsonv5_array 插件 (${new Date().toLocaleString()}) */\n\n` + newCode;
+      // 删除原始数组定义
+      replacedCode = replacedCode.replace(fullDef, "/* ✅ 混淆数组已删除 */");
+
+      return `/* ✅ 解密完成：sojsonv5_array @${new Date().toLocaleString()} */\n\n` + replacedCode;
 
     } catch (err) {
-      return `/* ❌ 解密失败：${err.message} */\n` + code;
+      return `/* ❌ 解密异常：${err.message} */\n` + code;
     }
   }
 };
