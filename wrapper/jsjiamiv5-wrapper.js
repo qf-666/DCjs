@@ -5,7 +5,7 @@ if (!window.DecodePlugins) {
     window.DecodePlugins = {};
 }
 
-window.DecodePlugins.sojsonv7 = {
+window.DecodePlugins.jsjiamiv5 = {
     name: "SOJSON v7高级解密插件",
     version: "1.0.0",
     
