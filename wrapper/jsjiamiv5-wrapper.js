@@ -2,7 +2,9 @@
 console.log("SOJSON v7解密插件(高级版)加载中...");
 
 if (!window.DecodePlugins) {
-    window.DecodePlugins = {};
+    window.DecodePlugins = {
+        return code;
+    },;
 }
 
 window.DecodePlugins.jsjiamiv5 = {
@@ -396,125 +398,10 @@ window.DecodePlugins.jsjiamiv5 = {
             }
             
             // 如果无法完全解码，只添加有用的注释
+            replacementCount++;
             return `/* 控制流平坦化 - while-switch模式 */\n${match}`;
         });
         
         if (replacementCount > 0) {
-            console.log(`处理了 ${replace}
-            return code;
-    },
-        
-        // 添加控制台日志拦截，以捕获插件的输出
-        const originalConsoleLog = console.log;
-        const originalConsoleError = console.error;
-        
-        console.log = function() {
-            const args = Array.from(arguments).join(' ');
-            log(args);
-            originalConsoleLog.apply(console, arguments);
-        };
-        
-        console.error = function() {
-            const args = Array.from(arguments).join(' ');
-            log(args, 'error');
-            originalConsoleError.apply(console, arguments);
-        };
-        
-        try {
-            log('开始解密...');
-            const result = window.DecodePlugins.sojsonv7.plugin(inputCode);
-            outputCode.value = result;
-            log('解密完成', 'success');
-        } catch (e) {
-            log('解密过程中出错: ' + e.message, 'error');
-            outputCode.value = "/* 解密过程中出错: " + e.message + " */\n\n" + inputCode;
-        } finally {
-            // 恢复原始控制台函数
-            console.log = originalConsoleLog;
-            console.error = originalConsoleError;
+            console.log(`处理了 ${replacementCount} 个while-switch控制流模式`);
         }
-    });
-    
-    // 清空按钮
-    document.getElementById('clear-btn').addEventListener('click', function() {
-        document.getElementById('input-code').value = '';
-        document.getElementById('output-code').value = '';
-        document.getElementById('log-container').innerHTML = '';
-    });
-    
-    // 复制按钮
-    document.getElementById('copy-btn').addEventListener('click', function() {
-        const outputCode = document.getElementById('output-code');
-        
-        if (!outputCode.value.trim()) {
-            log('没有可复制的结果', 'error');
-            return;
-        }
-        
-        outputCode.select();
-        document.execCommand('copy');
-        log('已复制解密结果到剪贴板', 'success');
-    });
-    
-    // 下载按钮
-    document.getElementById('download-btn').addEventListener('click', function() {
-        const outputCode = document.getElementById('output-code').value;
-        
-        if (!outputCode.trim()) {
-            log('没有可下载的结果', 'error');
-            return;
-        }
-        
-        const blob = new Blob([outputCode], { type: 'application/javascript' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'deobfuscated.js';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        log('已下载解密结果', 'success');
-    });
-    
-    // 添加拖放支持
-    const inputCodeElement = document.getElementById('input-code');
-    
-    inputCodeElement.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        inputCodeElement.style.borderColor = '#4a6ee0';
-    });
-    
-    inputCodeElement.addEventListener('dragleave', function() {
-        inputCodeElement.style.borderColor = '#ccc';
-    });
-    
-    inputCodeElement.addEventListener('drop', function(e) {
-        e.preventDefault();
-        inputCodeElement.style.borderColor = '#ccc';
-        
-        if (e.dataTransfer.files.length > 0) {
-            const file = e.dataTransfer.files[0];
-            
-            if (file.type !== 'application/javascript' && !file.name.endsWith('.js')) {
-                log('请选择JavaScript文件(.js)', 'error');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                inputCodeElement.value = e.target.result;
-                log(`已加载文件 "${file.name}"`, 'success');
-            };
-            reader.onerror = function() {
-                log('读取文件时出错', 'error');
-            };
-            reader.readAsText(file);
-        }
-    });
-    
-    log('SOJSON v7解密工具已准备就绪');
-})();
-
-console.log("SOJSON v7解密插件(高级版)加载完成");
