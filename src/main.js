@@ -7,7 +7,7 @@ const PluginObfuscator = require('./plugin/obfuscator.js')
 const PluginAwsc = require('./plugin/awsc.js')
 const PluginPart2AI = require('./plugin/part2ai.js')
 const PluginAADecode = require('./plugin/aadecode.js') // 新增的AADecode插件
-const PluginJsjiamiv5 = require('./plugin/jsjiamiv5.js
+//const PluginJsjiamiv5 = require('./plugin/jsjiamiv5.js
 
 // 读取参数
 let encodeFile = 'input.js'
@@ -32,7 +32,7 @@ let pluginUsed = '';
 // 循环尝试不同的插件，直到源代码与处理后的代码不一致
 const plugins = [
   { name: 'aadecode', plugin: PluginAADecode },
-  { name: 'jsjiamiv5', plugin: PluginJsjiamiv5 },
+  //{ name: 'jsjiamiv5', plugin: PluginJsjiamiv5 },
   { name: 'part2ai', plugin: PluginPart2AI },
   { name: 'obfuscator', plugin: PluginObfuscator },
   { name: 'sojsonv7', plugin: PluginSojsonV7 },
