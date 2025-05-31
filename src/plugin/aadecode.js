@@ -1,67 +1,37 @@
-// AADecode Plugin (CommonJS版本) - 保留脚本头部注释信息
-
-/**
- * 识别并提取AADecode编码之前的注释和配置信息
- * @param {string} code - 完整的代码字符串
- * @returns {object} - 包含头部信息和编码部分的对象
+/* AADecode - Decode encoded-as-aaencode JavaScript program.
+ * 
+ * Copyright (C) 2010,2016 @cat_in_136
+ * 
+ * This software is released under the MIT License.
+ * http://opensource.org/licenses/mit-license.php
  */
-function extractHeader(code) {
-  // 查找AADecode特征的起始位置
-  const aaStartIndex = code.search(/ﾟωﾟﾉ\s*=|ﾟдﾟ\s*=|ﾟДﾟ\s*=|ﾟΘﾟ\s*=/);
-  
-  if (aaStartIndex > 0) {
-    // 提取头部内容和AA编码部分
-    const header = code.substring(0, aaStartIndex).trim();
-    const encodedPart = code.substring(aaStartIndex);
-    
-    return {
-      header,
-      encodedPart
-    };
-  }
-  
-  // 如果没有找到AADecode特征，则返回完整代码作为编码部分
-  return {
-    header: '',
-    encodedPart: code
-  };
-}
 
-/**
- * 解码AA编码的JavaScript代码，同时保留原始脚本的头部注释
- * @param {string} code - 包含可能的头部注释和AA编码的完整代码
- * @returns {string|null} - 解码后的脚本（保留头部注释）或null（如果解码失败）
- */
-function plugin(code) {
-  try {
-    // 提取头部注释和编码部分
-    const { header, encodedPart } = extractHeader(code);
-    
-    // 检查是否为AA编码内容
-    if (!(encodedPart.includes('ﾟДﾟ') || encodedPart.includes('(ﾟΘﾟ)'))) {
-      return null;
-    }
-    
-    // 应用AADecode解码逻辑
-    let decodePart = encodedPart;
-    decodePart = decodePart.replace(") ('_')", "");
-    decodePart = decodePart.replace("(ﾟДﾟ) ['_'] (", "return ");
-    
-    // 创建函数并执行解码
-    const x = new Function(decodePart);
-    const decodedContent = x();
-    
-    // 如果存在头部，则保留并拼接
-    if (header) {
-      return `${header}\n\n${decodedContent}`;
-    }
-    
-    return decodedContent;
-  } catch (error) {
-    console.error('AADecode解码错误:', error);
-    return null;
-  }
-}
+const AADecode = {
+    decode: function(text) {
+        var evalPreamble = "(\uFF9F\u0414\uFF9F) ['_'] ( (\uFF9F\u0414\uFF9F) ['_'] (";
+        var decodePreamble = "( (\uFF9F\u0414\uFF9F) ['_'] (";
+        var evalPostamble = ") (\uFF9F\u0398\uFF9F)) ('_');";
+        var decodePostamble = ") ());";
 
-// 直接导出plugin函数
-module.exports = plugin;
+        // strip beginning/ending space.
+        text = text.replace(/^\s*/, "").replace(/\s*$/, "");
+
+        // returns empty text for empty input.
+        if (/^\s*$/.test(text)) {
+            return "";
+        }
+        // check if it is encoded.
+        if (text.lastIndexOf(evalPreamble) < 0) {
+            throw new Error("Given code is not encoded as aaencode.");
+        }
+        if (text.lastIndexOf(evalPostamble) != text.length - evalPostamble.length) {
+            throw new Error("Given code is not encoded as aaencode.");
+        }
+
+        var decodingScript = text.replace(evalPreamble, decodePreamble)
+                                 .replace(evalPostamble, decodePostamble);
+        return eval(decodingScript);
+    }
+};
+
+exports.decode = AADecode.decode;
