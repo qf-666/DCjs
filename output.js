@@ -1,14 +1,14 @@
-//Wed May 28 2025 23:35:57 GMT+0000 (Coordinated Universal Time)
+//Wed Sep 03 2025 03:59:41 GMT+0000 (Coordinated Universal Time)
 //Base:https://github.com/echo094/decode-js
 //Modify:https://github.com/smallfawn/decode_action
-//Generated at 2025-05-28T23:35:57.216Z
+//Generated at 2025-09-03T03:59:41.944Z
 //Base:https://github.com/echo094/decode-js
 //Modify:https://github.com/smallfawn/decode_action
 
 // 基础配置变量
-let names = "DailyWallpaper";
-let productName = "raven_pro";
-let productType = "com.skyriser.bingwallpapers.removeads";
+let names = "ColorIdentifier";
+let productName = "proversion";
+let productType = "color_identifier_pro";
 let appVersion = null;
 let notifyState = true;
 let ua = true;
@@ -49,6 +49,12 @@ obj.subscriber.non_subscriptions[productType] = [{
     store: "app_store",
     store_transaction_id: "280000000000000"
 }];
+obj.subscriber.entitlements[productName] = {
+    grace_period_expires_date: null,
+    purchase_date: "2024-03-08T04:44:44Z",
+    product_identifier: productType,
+    expires_date: null
+};
 // 通知配置
 $.notify("XiaoMao_" + names + " 执行成功！", "", "Nice!已解锁成功，可关掉此脚本。", "https://i.pixiv.re/img-original/img/2022/12/19/00/06/12/103718184_p0.png");
 $done({
