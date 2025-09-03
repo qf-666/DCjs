@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DCjs - 自动解密工具</title>
+    <!-- 预加载js-beautify库 -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js" as="script">
     <style>
         :root {
             --main-bg-color: #121418;
@@ -253,6 +255,41 @@
         .hidden {
             display: none;
         }
+        
+        .log-container {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 15px;
+            height: 100px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            color: #ddd;
+        }
+        
+        .log-entry {
+            margin-bottom: 3px;
+            border-bottom: 1px dotted #333;
+            padding-bottom: 3px;
+        }
+        
+        .log-time {
+            color: #888;
+            margin-right: 8px;
+        }
+        
+        .log-plugin {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        /* 增加按钮禁用状态样式 */
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -261,6 +298,13 @@
             <div>
                 <h1>DCjs <span class="version-tag">1.0</span></h1>
                 <p>解密脚本 - 自动检测加密类型</p>
+            </div>
+        </div>
+        
+        <div class="log-container" id="log-container">
+            <div class="log-entry">
+                <span class="log-time">[系统]</span>
+                <span>初始化解密工具...</span>
             </div>
         </div>
         
@@ -364,6 +408,10 @@
                     </div>
                     <div class="plugin-item">
                         <input type="checkbox" checked disabled>
+                        <span>jsjiamiv5</span>
+                    </div>
+                    <div class="plugin-item">
+                        <input type="checkbox" checked disabled>
                         <span>aadecode</span>
                     </div>
                     <div class="plugin-item">
@@ -408,143 +456,227 @@
         </footer>
     </div>
 
-    <!-- 加载js-beautify库 -->
+    <!-- 优先加载js-beautify库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js"></script>
-    
-    <!-- 加载适配器 -->
-    <script src="adapter.js"></script>
-    
-    <!-- 加载插件包装器 -->
-    <script src="wrapper/eval-wrapper.js"></script>
-    <script src="wrapper/aadecode-wrapper.js"></script>
-    <script src="wrapper/obfuscator-wrapper.js"></script>
-    <script src="wrapper/jsfuck-wrapper.js"></script>
-    <script src="wrapper/sojsonv7-wrapper.js"></script>
-    <script src="wrapper/sojson-wrapper.js"></script>
-    <script src="wrapper/jsconfuser-wrapper.js"></script>
-    <script src="wrapper/awsc-wrapper.js"></script>
-    <script src="wrapper/jjencode-wrapper.js"></script>
-    <script src="wrapper/js-beautify-wrapper.js"></script>
-    <script src="wrapper/common-wrapper.js"></script>
-    
+    <!-- 全局插件容器 -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 自动检测并解密函数
-            async function autoDecrypt(code) {
-                if (!code || code.trim() === '') {
-                    return {
-                        success: false,
-                        error: "输入代码为空",
-                        code: ""
-                    };
+        // 全局插件容器
+        window.DecodePlugins = {};
+        
+        // 防抖函数，提高按钮响应性能
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    func.apply(context, args);
+                }, wait);
+            };
+        }
+        
+        // 增强控制台日志功能
+        function addLogEntry(message, plugin = null) {
+            const logContainer = document.getElementById('log-container');
+            if (!logContainer) return; // 防止DOM元素不存在
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'log-time';
+            timeSpan.textContent = `[${timeString}]`;
+            
+            logEntry.appendChild(timeSpan);
+            
+            if (plugin) {
+                const pluginSpan = document.createElement('span');
+                pluginSpan.className = 'log-plugin';
+                pluginSpan.textContent = `[${plugin}]`;
+                logEntry.appendChild(pluginSpan);
+            }
+            
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            logEntry.appendChild(messageSpan);
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // 格式化字节大小的辅助函数
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+            
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+        
+        // 自动检测并解密函数
+        async function autoDecrypt(code) {
+            if (!code || code.trim() === '') {
+                return {
+                    success: false,
+                    error: "输入代码为空",
+                    code: ""
+                };
+            }
+            
+            // 插件顺序
+            const pluginOrder = [
+                'eval', 'jsjiamiv5', 'aadecode', 'obfuscator', 'jsfuck',
+                'sojsonv7', 'sojson', 'jsconfuser', 'awsc', 'jjencode', 'common'
+            ];
+            
+            let processedCode = code;
+            let pluginUsed = null;
+            
+            addLogEntry("开始解密过程，按顺序尝试各插件...");
+            
+            // 尝试各插件解密
+            for (const pluginName of pluginOrder) {
+                const plugin = window.DecodePlugins[pluginName];
+                
+                // 如果插件未加载，跳过
+                if (!plugin) {
+                    addLogEntry(`插件 ${pluginName} 未加载`, "警告");
+                    continue;
                 }
                 
-                // 插件顺序，与您Node.js脚本中的顺序相匹配
-                const pluginOrder = [
-                    'eval', 'aadecode', 'obfuscator', 'jsfuck',
-                    'sojsonv7', 'sojson', 'jsconfuser', 'awsc', 'jjencode'
-                ];
-                
-                let processedCode = code;
-                let pluginUsed = null;
-                
-                // 尝试各插件解密
-                for (const pluginName of pluginOrder) {
-                    const plugin = window.DecodePlugins[pluginName];
+                try {
+                    // 调用插件的检测函数
+                    addLogEntry(`尝试检测是否为 ${pluginName} 加密`, pluginName);
                     
-                    // 如果插件未加载，跳过
-                    if (!plugin) {
-                        console.warn(`插件 ${pluginName} 未加载`);
-                        continue;
-                    }
-                    
-                    try {
-                        // 调用插件的检测函数
-                        if (plugin.detect && plugin.detect(processedCode)) {
-                            console.log(`检测到 ${pluginName} 加密`);
+                    if (plugin.detect && plugin.detect(processedCode)) {
+                        addLogEntry(`检测到 ${pluginName} 加密，正在解密...`, pluginName);
+                        
+                        // 调用解密函数
+                        const decryptFn = plugin.unpack || plugin.plugin || plugin.handle;
+                        if (decryptFn) {
+                            const startTime = performance.now();
+                            const result = await Promise.resolve(decryptFn(processedCode));
+                            const endTime = performance.now();
                             
-                            // 调用解密函数
-                            const decryptFn = plugin.unpack || plugin.plugin || plugin.handle;
-                            if (decryptFn) {
-                                const result = await decryptFn(processedCode);
-                                if (result && result !== processedCode) {
-                                    processedCode = result;
-                                    pluginUsed = pluginName;
-                                    break;
-                                }
+                            if (result && result !== processedCode) {
+                                addLogEntry(`${pluginName} 解密成功! 耗时: ${(endTime-startTime).toFixed(2)}ms`, pluginName);
+                                
+                                processedCode = result;
+                                pluginUsed = pluginName;
+                                break;
+                            } else {
+                                addLogEntry(`${pluginName} 解密失败或无变化`, pluginName);
                             }
                         }
-                    } catch (error) {
-                        console.error(`插件 ${pluginName} 处理出错:`, error);
+                    } else {
+                        addLogEntry(`不是 ${pluginName} 加密，继续检测...`, pluginName);
                     }
-                }
-                
-                // 格式化结果
-                if (processedCode !== code) {
-                    try {
-                        // 使用js-beautify格式化代码
-                        if (window.js_beautify) {
-                            processedCode = js_beautify(processedCode, {
-                                indent_size: 2,
-                                space_in_empty_paren: true
-                            });
-                        }
-                        
-                        const time = new Date().toLocaleString();
-                        const header = [
-                            `//${time}`,
-                            "//Base:https://github.com/echo094/decode-js",
-                            "//Modify:https://github.com/smallfawn/decode_action",
-                            `//解密插件: ${pluginUsed || '未知'}`
-                        ].join('\n');
-                        
-                        return {
-                            success: true,
-                            code: header + '\n' + processedCode,
-                            plugin: pluginUsed
-                        };
-                    } catch (e) {
-                        return {
-                            success: false,
-                            error: "格式化代码失败: " + e.message,
-                            code: processedCode
-                        };
-                    }
-                } else {
-                    // 所有插件都无效，尝试common插件
-                    const commonPlugin = window.DecodePlugins.common;
-                    if (commonPlugin && commonPlugin.plugin) {
-                        try {
-                            const result = await commonPlugin.plugin(code);
-                            if (result && result !== code) {
-                                return {
-                                    success: true,
-                                    code: result,
-                                    plugin: 'common'
-                                };
-                            }
-                        } catch (e) {
-                            console.error('Common plugin error:', e);
-                        }
-                    }
-                    
-                    return {
-                        success: false,
-                        error: "所有插件处理后代码与原代码一致，可能不支持该加密类型。",
-                        code: code
-                    };
+                } catch (error) {
+                    addLogEntry(`使用 ${pluginName} 解密时出错: ${error.message}`, "错误");
                 }
             }
-
+            
+            // 格式化结果
+            if (processedCode !== code) {
+                try {
+                    // 使用js-beautify格式化代码
+                    addLogEntry("解密成功，正在格式化代码...");
+                    
+                    if (window.js_beautify) {
+                        processedCode = js_beautify(processedCode, {
+                            indent_size: 2,
+                            space_in_empty_paren: true
+                        });
+                    }
+                    
+                    const time = new Date().toLocaleString();
+                    const header = [
+                        `//${time}`,
+                        "//Base:https://github.com/echo094/decode-js",
+                        "//Modify:https://github.com/smallfawn/decode_action",
+                        `//解密插件: ${pluginUsed || '未知'}`
+                    ].join('\n');
+                    
+                    addLogEntry(`格式化完成，使用了 ${pluginUsed} 插件解密`);
+                    
+                    return {
+                        success: true,
+                        code: header + '\n' + processedCode,
+                        plugin: pluginUsed
+                    };
+                } catch (e) {
+                    addLogEntry(`格式化代码失败: ${e.message}`, "错误");
+                    
+                    return {
+                        success: false,
+                        error: "格式化代码失败: " + e.message,
+                        code: processedCode
+                    };
+                }
+            } else {
+                // 所有插件都无效，尝试common插件
+                addLogEntry("所有特定插件均未改变代码，尝试common插件...");
+                
+                const commonPlugin = window.DecodePlugins.common;
+                if (commonPlugin && commonPlugin.plugin) {
+                    try {
+                        const result = await Promise.resolve(commonPlugin.plugin(code));
+                        if (result && result !== code) {
+                            addLogEntry("使用common插件解密成功", "common");
+                            
+                            return {
+                                success: true,
+                                code: result,
+                                plugin: 'common'
+                            };
+                        }
+                    } catch (e) {
+                        addLogEntry(`Common插件错误: ${e.message}`, "错误");
+                    }
+                }
+                
+                addLogEntry("所有插件处理后代码与原代码一致，可能不支持该加密类型", "警告");
+                
+                return {
+                    success: false,
+                    error: "所有插件处理后代码与原代码一致，可能不支持该加密类型。",
+                    code: code
+                };
+            }
+        }
+    </script>
+    
+    <!-- 加载所有插件包装器 -->
+    <script src="wrapper/jsjiamiv5-wrapper.js"></script>
+    <script src="wrapper/aadecode-wrapper.js"></script>
+    <script src="wrapper/awsc-wrapper.js"></script>
+    <script src="wrapper/common-wrapper.js"></script>
+    <script src="wrapper/eval-wrapper.js"></script>
+    <script src="wrapper/jjencode-wrapper.js"></script>
+    <script src="wrapper/jsconfuser-wrapper.js"></script>
+    <script src="wrapper/jsfuck-wrapper.js"></script>
+    <script src="wrapper/obfuscator-wrapper.js"></script>
+    <script src="wrapper/sojson-wrapper.js"></script>
+    <script src="wrapper/sojsonv7-wrapper.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
             // 标签切换
             const tabs = document.querySelectorAll('.tabs li');
             tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabId = tab.getAttribute('data-tab');
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
                     
                     // 更新标签激活状态
                     tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
+                    this.classList.add('active');
                     
                     // 更新内容显示
                     document.querySelectorAll('.tab-content').forEach(content => {
@@ -556,234 +688,379 @@
             
             // 解密按钮
             const decryptBtn = document.getElementById('decrypt-btn');
-            decryptBtn.addEventListener('click', async () => {
-                const codeInput = document.getElementById('input-editor').value;
-                const outputEditor = document.getElementById('output-editor');
-                const statusIndicator = document.getElementById('status-indicator');
-                const statusText = document.getElementById('status-text');
-                
-                if (!codeInput.trim()) {
-                    statusIndicator.className = 'status-indicator error';
-                    statusText.textContent = '错误: 请输入需要解密的代码';
-                    return;
-                }
-                
-                // 更新状态
-                statusIndicator.className = 'status-indicator';
-                statusText.textContent = '正在解密...';
-                
-                try {
-                    const result = await autoDecrypt(codeInput);
+            if (decryptBtn) {
+                decryptBtn.addEventListener('click', debounce(async function() {
+                    const inputEditor = document.getElementById('input-editor');
+                    if (!inputEditor) return;
                     
-                    if (result.success) {
-                        outputEditor.value = result.code;
-                        statusIndicator.className = 'status-indicator success';
-                        statusText.textContent = `解密成功，使用了 ${result.plugin || '未知'} 插件`;
-                    } else {
-                        outputEditor.value = result.code || '';
+                    const codeInput = inputEditor.value;
+                    const outputEditor = document.getElementById('output-editor');
+                    const statusIndicator = document.getElementById('status-indicator');
+                    const statusText = document.getElementById('status-text');
+                    
+                    if (!codeInput.trim()) {
                         statusIndicator.className = 'status-indicator error';
-                        statusText.textContent = `解密失败: ${result.error}`;
+                        statusText.textContent = '错误: 请输入需要解密的代码';
+                        return;
                     }
-                } catch (e) {
-                    outputEditor.value = '';
-                    statusIndicator.className = 'status-indicator error';
-                    statusText.textContent = `发生错误: ${e.message}`;
-                }
-            });
+                    
+                    // 禁用按钮，防止重复点击
+                    decryptBtn.disabled = true;
+                    decryptBtn.textContent = '解密中...';
+                    
+                    // 更新状态
+                    statusIndicator.className = 'status-indicator';
+                    statusText.textContent = '正在解密...';
+                    
+                    try {
+                        addLogEntry("开始新的解密任务...");
+                        const startTime = performance.now();
+                        const result = await autoDecrypt(codeInput);
+                        const endTime = performance.now();
+                        
+                        if (result.success) {
+                            outputEditor.value = result.code;
+                            statusIndicator.className = 'status-indicator success';
+                            statusText.textContent = `解密成功，使用了 ${result.plugin || '未知'} 插件，耗时 ${(endTime-startTime).toFixed(2)}ms`;
+                            addLogEntry(`解密完成! 总耗时: ${(endTime-startTime).toFixed(2)}ms`);
+                        } else {
+                            outputEditor.value = result.code || '';
+                            statusIndicator.className = 'status-indicator error';
+                            statusText.textContent = `解密失败: ${result.error}`;
+                            addLogEntry(`解密失败: ${result.error}`, "错误");
+                        }
+                    } catch (e) {
+                        outputEditor.value = '';
+                        statusIndicator.className = 'status-indicator error';
+                        statusText.textContent = `发生错误: ${e.message}`;
+                        addLogEntry(`解密过程发生错误: ${e.message}`, "错误");
+                    } finally {
+                        // 恢复按钮状态
+                        decryptBtn.disabled = false;
+                        decryptBtn.textContent = '点击解密';
+                    }
+                }, 300));
+            }
             
             // 清除按钮
-            document.getElementById('clear-btn').addEventListener('click', () => {
-                document.getElementById('input-editor').value = '';
-                document.getElementById('output-editor').value = '';
-                document.getElementById('status-indicator').className = 'status-indicator';
-                document.getElementById('status-text').textContent = '准备就绪';
-            });
+            const clearBtn = document.getElementById('clear-btn');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    const inputEditor = document.getElementById('input-editor');
+                    const outputEditor = document.getElementById('output-editor');
+                    if (inputEditor) inputEditor.value = '';
+                    if (outputEditor) outputEditor.value = '';
+                    
+                    const statusIndicator = document.getElementById('status-indicator');
+                    const statusText = document.getElementById('status-text');
+                    if (statusIndicator) statusIndicator.className = 'status-indicator';
+                    if (statusText) statusText.textContent = '准备就绪';
+                    
+                    addLogEntry("清除输入和输出");
+                });
+            }
             
             // 复制结果
-            document.getElementById('copy-btn').addEventListener('click', () => {
-                const outputText = document.getElementById('output-editor').value;
-                if (outputText) {
-                    navigator.clipboard.writeText(outputText).then(() => {
-                        const statusText = document.getElementById('status-text');
-                        statusText.textContent = '已复制到剪贴板';
-                        setTimeout(() => {
-                            statusText.textContent = '准备就绪';
-                        }, 2000);
-                    });
-                }
-            });
+            const copyBtn = document.getElementById('copy-btn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function() {
+                    const outputEditor = document.getElementById('output-editor');
+                    if (!outputEditor) return;
+                    
+                    const outputText = outputEditor.value;
+                    if (outputText) {
+                        navigator.clipboard.writeText(outputText).then(() => {
+                            const statusText = document.getElementById('status-text');
+                            if (statusText) {
+                                statusText.textContent = '已复制到剪贴板';
+                                setTimeout(() => {
+                                    statusText.textContent = '准备就绪';
+                                }, 2000);
+                            }
+                            addLogEntry("复制结果到剪贴板");
+                        }).catch(err => {
+                            console.error('复制失败:', err);
+                            addLogEntry("复制到剪贴板失败", "错误");
+                        });
+                    }
+                });
+            }
             
             // 下载结果
-            document.getElementById('download-btn').addEventListener('click', () => {
-                const outputText = document.getElementById('output-editor').value;
-                if (outputText) {
-                    const blob = new Blob([outputText], { type: 'text/javascript' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'decrypted_output.js';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }
-            });
+            const downloadBtn = document.getElementById('download-btn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function() {
+                    const outputEditor = document.getElementById('output-editor');
+                    if (!outputEditor) return;
+                    
+                    const outputText = outputEditor.value;
+                    if (outputText) {
+                        const blob = new Blob([outputText], { type: 'text/javascript' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'decrypted_output.js';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        addLogEntry("下载解密结果");
+                    }
+                });
+            }
             
             // 文件上传处理
             const fileInput = document.getElementById('file-input');
             const fileSelectBtn = document.getElementById('file-select-btn');
             const fileDropArea = document.getElementById('file-drop-area');
             
-            fileSelectBtn.addEventListener('click', () => {
-                fileInput.click();
-            });
-            
-            fileInput.addEventListener('change', handleFileUpload);
-            
-            // 拖放处理
-            fileDropArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                fileDropArea.style.borderColor = 'var(--highlight-color)';
-            });
-            
-            fileDropArea.addEventListener('dragleave', () => {
-                fileDropArea.style.borderColor = 'var(--border-color)';
-            });
-            
-            fileDropArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                fileDropArea.style.borderColor = 'var(--border-color)';
-                if (e.dataTransfer.files.length) {
-                    fileInput.files = e.dataTransfer.files;
-                    handleFileUpload();
-                }
-            });
+            if (fileInput && fileSelectBtn && fileDropArea) {
+                fileSelectBtn.addEventListener('click', function() {
+                    fileInput.click();
+                });
+                
+                fileInput.addEventListener('change', function() {
+                    handleFileUpload(fileInput);
+                });
+                
+                // 拖放处理
+                fileDropArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    fileDropArea.style.borderColor = 'var(--highlight-color)';
+                });
+                
+                fileDropArea.addEventListener('dragleave', function() {
+                    fileDropArea.style.borderColor = 'var(--border-color)';
+                });
+                
+                fileDropArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    fileDropArea.style.borderColor = 'var(--border-color)';
+                    if (e.dataTransfer.files.length) {
+                        fileInput.files = e.dataTransfer.files;
+                        handleFileUpload(fileInput);
+                    }
+                });
+            }
             
             // 处理文件上传
-            function handleFileUpload() {
-                const file = fileInput.files[0];
+            function handleFileUpload(input) {
+                if (!input) return;
+                
+                const file = input.files[0];
                 if (!file) return;
                 
+                addLogEntry(`处理上传文件: ${file.name} (${formatBytes(file.size)})`);
+                
                 const reader = new FileReader();
-                reader.onload = async (e) => {
+                reader.onload = async function(e) {
                     const fileContent = e.target.result;
                     const fileOutput = document.getElementById('file-output');
                     const fileResultContainer = document.getElementById('file-result-container');
                     const fileButtons = document.getElementById('file-buttons');
                     
+                    if (!fileOutput || !fileResultContainer || !fileButtons) return;
+                    
                     try {
+                        // 显示加载状态
+                        fileOutput.value = "正在解密，请稍候...";
+                        fileResultContainer.classList.remove('hidden');
+                        
                         const result = await autoDecrypt(fileContent);
                         
                         fileOutput.value = result.success ? result.code : (result.error || '解密失败');
-                        fileResultContainer.classList.remove('hidden');
                         fileButtons.classList.remove('hidden');
                     } catch (error) {
                         fileOutput.value = `解密错误: ${error.message}`;
-                        fileResultContainer.classList.remove('hidden');
                         fileButtons.classList.remove('hidden');
+                        addLogEntry(`文件解密错误: ${error.message}`, "错误");
                     }
                 };
+                
+                reader.onerror = function() {
+                    addLogEntry("读取文件时发生错误", "错误");
+                };
+                
                 reader.readAsText(file);
             }
             
             // 文件结果复制
-            document.getElementById('file-copy-btn').addEventListener('click', () => {
-                const outputText = document.getElementById('file-output').value;
-                if (outputText) {
-                    navigator.clipboard.writeText(outputText);
-                    alert('已复制到剪贴板');
-                }
-            });
+            const fileCopyBtn = document.getElementById('file-copy-btn');
+            if (fileCopyBtn) {
+                fileCopyBtn.addEventListener('click', function() {
+                    const fileOutput = document.getElementById('file-output');
+                    if (!fileOutput) return;
+                    
+                    const outputText = fileOutput.value;
+                    if (outputText) {
+                        navigator.clipboard.writeText(outputText)
+                            .then(() => {
+                                addLogEntry("复制文件解密结果到剪贴板");
+                                alert('已复制到剪贴板');
+                            })
+                            .catch(err => {
+                                console.error('复制失败:', err);
+                                addLogEntry("复制到剪贴板失败", "错误");
+                            });
+                    }
+                });
+            }
             
             // 文件结果下载
-            document.getElementById('file-download-btn').addEventListener('click', () => {
-                const outputText = document.getElementById('file-output').value;
-                if (outputText) {
-                    const blob = new Blob([outputText], { type: 'text/javascript' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'decrypted_file.js';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }
-            });
+            const fileDownloadBtn = document.getElementById('file-download-btn');
+            if (fileDownloadBtn) {
+                fileDownloadBtn.addEventListener('click', function() {
+                    const fileOutput = document.getElementById('file-output');
+                    if (!fileOutput) return;
+                    
+                    const outputText = fileOutput.value;
+                    if (outputText) {
+                        const blob = new Blob([outputText], { type: 'text/javascript' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'decrypted_file.js';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        addLogEntry("下载文件解密结果");
+                    }
+                });
+            }
             
             // URL输入处理
-            document.getElementById('url-fetch-btn').addEventListener('click', async () => {
-                const urlInput = document.getElementById('url-input').value;
-                const urlOutput = document.getElementById('url-output');
-                const urlResultContainer = document.getElementById('url-result-container');
-                const urlButtons = document.getElementById('url-buttons');
-                
-                if (!urlInput.trim()) {
-                    alert('请输入有效的URL');
-                    return;
-                }
-                
-                try {
-                    // 获取URL内容
-                    const response = await fetch(urlInput);
-                    if (!response.ok) {
-                        throw new Error(`HTTP错误 ${response.status}`);
+            const urlFetchBtn = document.getElementById('url-fetch-btn');
+            if (urlFetchBtn) {
+                urlFetchBtn.addEventListener('click', debounce(async function() {
+                    const urlInput = document.getElementById('url-input');
+                    const urlOutput = document.getElementById('url-output');
+                    const urlResultContainer = document.getElementById('url-result-container');
+                    const urlButtons = document.getElementById('url-buttons');
+                    
+                    if (!urlInput || !urlOutput || !urlResultContainer || !urlButtons) return;
+                    
+                    const url = urlInput.value;
+                    if (!url.trim()) {
+                        alert('请输入有效的URL');
+                        return;
                     }
                     
-                    const code = await response.text();
-                    const result = await autoDecrypt(code);
+                    // 禁用按钮，防止重复点击
+                    urlFetchBtn.disabled = true;
+                    urlFetchBtn.textContent = '获取中...';
                     
-                    urlOutput.value = result.success ? result.code : (result.error || '解密失败');
-                    urlResultContainer.classList.remove('hidden');
-                    urlButtons.classList.remove('hidden');
-                } catch (error) {
-                    urlOutput.value = `获取或解密URL错误: ${error.message}`;
-                    urlResultContainer.classList.remove('hidden');
-                    urlButtons.classList.remove('hidden');
-                }
-            });
+                    addLogEntry(`获取远程URL内容: ${url}`);
+                    
+                    try {
+                        // 显示加载状态
+                        urlOutput.value = "正在获取内容，请稍候...";
+                        urlResultContainer.classList.remove('hidden');
+                        
+                        // 获取URL内容
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error(`HTTP错误 ${response.status}`);
+                        }
+                        
+                        const code = await response.text();
+                        addLogEntry(`成功获取URL内容，长度: ${formatBytes(code.length)}`);
+                        
+                        urlOutput.value = "正在解密，请稍候...";
+                        
+                        const result = await autoDecrypt(code);
+                        
+                        urlOutput.value = result.success ? result.code : (result.error || '解密失败');
+                        urlButtons.classList.remove('hidden');
+                    } catch (error) {
+                        urlOutput.value = `获取或解密URL错误: ${error.message}`;
+                        urlButtons.classList.remove('hidden');
+                        addLogEntry(`URL处理错误: ${error.message}`, "错误");
+                    } finally {
+                        // 恢复按钮状态
+                        urlFetchBtn.disabled = false;
+                        urlFetchBtn.textContent = '获取并解密';
+                    }
+                }, 300));
+            }
             
             // URL结果复制
-            document.getElementById('url-copy-btn').addEventListener('click', () => {
-                const outputText = document.getElementById('url-output').value;
-                if (outputText) {
-                    navigator.clipboard.writeText(outputText);
-                    alert('已复制到剪贴板');
-                }
-            });
+            const urlCopyBtn = document.getElementById('url-copy-btn');
+            if (urlCopyBtn) {
+                urlCopyBtn.addEventListener('click', function() {
+                    const urlOutput = document.getElementById('url-output');
+                    if (!urlOutput) return;
+                    
+                    const outputText = urlOutput.value;
+                    if (outputText) {
+                        navigator.clipboard.writeText(outputText)
+                            .then(() => {
+                                addLogEntry("复制URL解密结果到剪贴板");
+                                alert('已复制到剪贴板');
+                            })
+                            .catch(err => {
+                                console.error('复制失败:', err);
+                                addLogEntry("复制到剪贴板失败", "错误");
+                            });
+                    }
+                });
+            }
             
             // URL结果下载
-            document.getElementById('url-download-btn').addEventListener('click', () => {
-                const outputText = document.getElementById('url-output').value;
-                if (outputText) {
-                    const blob = new Blob([outputText], { type: 'text/javascript' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'decrypted_url.js';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }
-            });
+            const urlDownloadBtn = document.getElementById('url-download-btn');
+            if (urlDownloadBtn) {
+                urlDownloadBtn.addEventListener('click', function() {
+                    const urlOutput = document.getElementById('url-output');
+                    if (!urlOutput) return;
+                    
+                    const outputText = urlOutput.value;
+                    if (outputText) {
+                        const blob = new Blob([outputText], { type: 'text/javascript' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'decrypted_url.js';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        addLogEntry("下载URL解密结果");
+                    }
+                });
+            }
             
-            // 初始化状态
-            document.getElementById('status-indicator').className = 'status-indicator';
-            document.getElementById('status-text').textContent = '准备就绪';
-            
-            // 检查插件是否已加载
+            // 检查已加载的插件
             setTimeout(() => {
-                let loadedCount = 0;
+                let loadedPlugins = [];
+                let notLoadedPlugins = [];
                 
-                for (const pluginName in window.DecodePlugins) {
+                const pluginNames = ['eval', 'jsjiamiv5', 'aadecode', 'obfuscator', 'jsfuck', 'sojsonv7', 'sojson', 'jsconfuser', 'awsc', 'jjencode', 'common'];
+                
+                for (const pluginName of pluginNames) {
                     if (window.DecodePlugins[pluginName]) {
-                        loadedCount++;
+                        loadedPlugins.push(pluginName);
+                    } else {
+                        notLoadedPlugins.push(pluginName);
                     }
                 }
                 
-                console.log(`已加载 ${loadedCount} 个插件`);
+                if (loadedPlugins.length > 0) {
+                    addLogEntry(`成功加载了 ${loadedPlugins.length} 个插件: ${loadedPlugins.join(', ')}`);
+                }
+                
+                if (notLoadedPlugins.length > 0) {
+                    addLogEntry(`未加载 ${notLoadedPlugins.length} 个插件: ${notLoadedPlugins.join(', ')}`, "警告");
+                }
             }, 1000);
+            
+            // 初始化状态
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            if (statusIndicator) statusIndicator.className = 'status-indicator';
+            if (statusText) statusText.textContent = '准备就绪';
+            
+            // 添加初始日志
+            addLogEntry("解密工具初始化完成，支持自动检测多种加密类型");
         });
     </script>
 </body>
