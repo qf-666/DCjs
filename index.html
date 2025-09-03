@@ -16,7 +16,6 @@
             --button-bg: #2a2e36;
             --button-hover: #3a404b;
         }
-        
         body {
             background-color: var(--main-bg-color);
             color: var(--text-color);
@@ -25,271 +24,47 @@
             padding: 0;
             line-height: 1.6;
         }
-        
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            border-bottom: 2px solid var(--highlight-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        
-        .version-tag {
-            background-color: var(--highlight-color);
-            color: black;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-        
-        .tab-container {
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
-        }
-        
-        .tabs {
-            display: flex;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .tabs li {
-            padding: 8px 15px;
-            cursor: pointer;
-            position: relative;
-        }
-        
-        .tabs li.active {
-            color: var(--highlight-color);
-        }
-        
-        .tabs li.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background-color: var(--highlight-color);
-        }
-        
-        .tab-content {
-            display: none;
-            padding: 15px 0;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .file-type-selector {
-            margin-bottom: 20px;
-        }
-        
-        .file-type-selector label {
-            margin-right: 15px;
-        }
-        
-        .file-drop-area {
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            margin-bottom: 20px;
-            background-color: var(--secondary-bg-color);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .file-drop-area:hover {
-            border-color: var(--highlight-color);
-        }
-        
-        .editor-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .editor-box {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .editor-label {
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        .editor {
-            width: 100%;
-            height: 400px;
-            background-color: var(--secondary-bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            resize: none;
-            padding: 10px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-            font-size: 14px;
-            color: var(--text-color);
-            line-height: 1.5;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        button {
-            background-color: var(--button-bg);
-            color: var(--text-color);
-            border: none;
-            border-radius: 4px;
-            padding: 8px 15px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        button:hover {
-            background-color: var(--button-hover);
-        }
-        
-        button.primary {
-            background-color: var(--highlight-color);
-            color: black;
-        }
-        
-        button.primary:hover {
-            background-color: #6fa535;
-        }
-        
-        .plugin-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .plugin-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .instructions {
-            background-color: var(--secondary-bg-color);
-            border-left: 4px solid var(--highlight-color);
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .instructions h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        
-        .instructions ol {
-            margin: 0;
-            padding-left: 20px;
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            font-size: 12px;
-            color: #999;
-        }
-        
-        .status-bar {
-            background-color: var(--secondary-bg-color);
-            padding: 8px 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: #777;
-        }
-        
-        .status-indicator.success {
-            background-color: #4CAF50;
-        }
-        
-        .status-indicator.error {
-            background-color: #f44336;
-        }
-        
-        .url-input {
-            width: 100%;
-            padding: 8px;
-            background-color: var(--secondary-bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            color: var(--text-color);
-            margin-bottom: 10px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .log-container {
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            padding: 10px;
-            margin-bottom: 15px;
-            height: 100px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
-            color: #ddd;
-        }
-        
-        .log-entry {
-            margin-bottom: 3px;
-            border-bottom: 1px dotted #333;
-            padding-bottom: 3px;
-        }
-        
-        .log-time {
-            color: #888;
-            margin-right: 8px;
-        }
-        
-        .log-plugin {
-            color: #4CAF50;
-            font-weight: bold;
-            margin-right: 8px;
-        }
-
-        /* 增加按钮禁用状态样式 */
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .header { border-bottom: 2px solid var(--highlight-color); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .version-tag { background-color: var(--highlight-color); color: black; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 10px; }
+        .tab-container { border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .tabs { display: flex; list-style: none; padding: 0; margin: 0; }
+        .tabs li { padding: 8px 15px; cursor: pointer; position: relative; }
+        .tabs li.active { color: var(--highlight-color); }
+        .tabs li.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: var(--highlight-color); }
+        .tab-content { display: none; padding: 15px 0; }
+        .tab-content.active { display: block; }
+        .file-type-selector { margin-bottom: 20px; }
+        .file-type-selector label { margin-right: 15px; }
+        .file-drop-area { border: 2px dashed var(--border-color); border-radius: 8px; padding: 40px; text-align: center; margin-bottom: 20px; background-color: var(--secondary-bg-color); cursor: pointer; transition: all 0.3s; }
+        .file-drop-area:hover { border-color: var(--highlight-color); }
+        .editor-container { display: flex; gap: 20px; margin-bottom: 20px; }
+        .editor-box { flex: 1; display: flex; flex-direction: column; }
+        .editor-label { margin-bottom: 5px; font-weight: 500; }
+        .editor { width: 100%; height: 400px; background-color: var(--secondary-bg-color); border: 1px solid var(--border-color); border-radius: 4px; resize: none; padding: 10px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace; font-size: 14px; color: var(--text-color); line-height: 1.5; }
+        .button-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        button { background-color: var(--button-bg); color: var(--text-color); border: none; border-radius: 4px; padding: 8px 15px; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: var(--button-hover); }
+        button.primary { background-color: var(--highlight-color); color: black; }
+        button.primary:hover { background-color: #6fa535; }
+        .plugin-list { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .plugin-item { display: flex; align-items: center; gap: 5px; }
+        .instructions { background-color: var(--secondary-bg-color); border-left: 4px solid var(--highlight-color); padding: 15px; margin-bottom: 20px; }
+        .instructions h3 { margin-top: 0; margin-bottom: 10px; }
+        .instructions ol { margin: 0; padding-left: 20px; }
+        footer { text-align: center; margin-top: 40px; font-size: 12px; color: #999; }
+        .status-bar { background-color: var(--secondary-bg-color); padding: 8px 12px; border-radius: 4px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .status-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: #777; }
+        .status-indicator.success { background-color: #4CAF50; }
+        .status-indicator.error { background-color: #f44336; }
+        .url-input { width: 100%; padding: 8px; background-color: var(--secondary-bg-color); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-color); margin-bottom: 10px; }
+        .hidden { display: none; }
+        .log-container { background-color: #1a1a1a; border: 1px solid #333; padding: 10px; margin-bottom: 15px; height: 100px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #ddd; }
+        .log-entry { margin-bottom: 3px; border-bottom: 1px dotted #333; padding-bottom: 3px; }
+        .log-time { color: #888; margin-right: 8px; }
+        .log-plugin { color: #4CAF50; font-weight: bold; margin-right: 8px; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -300,14 +75,14 @@
                 <p>解密脚本 - 自动检测加密类型</p>
             </div>
         </div>
-        
+
         <div class="log-container" id="log-container">
             <div class="log-entry">
                 <span class="log-time">[系统]</span>
                 <span>初始化解密工具...</span>
             </div>
         </div>
-        
+
         <div class="tab-container">
             <ul class="tabs">
                 <li class="active" data-tab="tab-code">粘贴代码</li>
@@ -316,14 +91,14 @@
                 <li data-tab="tab-about">关于工具</li>
             </ul>
         </div>
-        
+
         <div id="tab-code" class="tab-content active">
             <div class="file-type-selector">
                 <label><input type="radio" name="fileType" value="js" checked> JavaScript (.js)</label>
                 <label><input type="radio" name="fileType" value="py"> Python (.py)</label>
                 <label><input type="radio" name="fileType" value="php"> PHP (.php)</label>
             </div>
-            
+
             <div class="editor-container">
                 <div class="editor-box">
                     <div class="editor-label">输入加密代码:</div>
@@ -334,20 +109,20 @@
                     <textarea id="output-editor" class="editor" placeholder="解密结果将显示在这里..." readonly></textarea>
                 </div>
             </div>
-            
+
             <div class="button-group">
                 <button id="decrypt-btn" class="primary">点击解密</button>
                 <button id="clear-btn">清除</button>
                 <button id="copy-btn">复制结果</button>
                 <button id="download-btn">下载结果</button>
             </div>
-            
+
             <div class="status-bar">
                 <div id="status-indicator" class="status-indicator"></div>
                 <div id="status-text">准备就绪</div>
             </div>
         </div>
-        
+
         <div id="tab-file" class="tab-content">
             <div class="file-drop-area" id="file-drop-area">
                 <div>
@@ -356,39 +131,39 @@
                     <button id="file-select-btn">选择文件</button>
                 </div>
             </div>
-            
+
             <div class="editor-container hidden" id="file-result-container">
                 <div class="editor-box">
                     <div class="editor-label">解密结果:</div>
                     <textarea id="file-output" class="editor" readonly></textarea>
                 </div>
             </div>
-            
+
             <div class="button-group hidden" id="file-buttons">
                 <button id="file-copy-btn">复制结果</button>
                 <button id="file-download-btn">下载结果</button>
             </div>
         </div>
-        
+
         <div id="tab-url" class="tab-content">
             <div>
                 <input type="text" id="url-input" class="url-input" placeholder="输入JavaScript文件URL...">
                 <button id="url-fetch-btn">获取并解密</button>
             </div>
-            
+
             <div class="editor-container hidden" id="url-result-container">
                 <div class="editor-box">
                     <div class="editor-label">解密结果:</div>
                     <textarea id="url-output" class="editor" readonly></textarea>
                 </div>
             </div>
-            
+
             <div class="button-group hidden" id="url-buttons">
                 <button id="url-copy-btn">复制结果</button>
                 <button id="url-download-btn">下载结果</button>
             </div>
         </div>
-        
+
         <div id="tab-about" class="tab-content">
             <div class="instructions">
                 <h3>使用方法:</h3>
@@ -398,59 +173,26 @@
                     <li>解密结果将显示在右侧编辑框，可以复制或下载</li>
                 </ol>
             </div>
-            
+
             <div>
                 <h3>目前支持的解密方式:</h3>
                 <div class="plugin-list">
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>eval</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>jsjiamiv5</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>aadecode</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>obfuscator</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>jsfuck</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>sojsonv7</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>sojson</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>jsconfuser</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>awsc</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>jjencode</span>
-                    </div>
-                    <div class="plugin-item">
-                        <input type="checkbox" checked disabled>
-                        <span>common</span>
-                    </div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>eval</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>jsjiamiv5</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>aadecode</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>obfuscator</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>jsfuck</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>sojsonv7</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>sojson</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>jsconfuser</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>awsc</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>jjencode</span></div>
+                    <div class="plugin-item"><input type="checkbox" checked disabled><span>common</span></div>
                 </div>
                 <p>脚本会自动适应检测加密方式，无需手动选择。</p>
             </div>
         </div>
-        
+
         <footer>
             <p>Base: <a href="https://github.com/echo094/decode-js" target="_blank">decode-js</a> | Modify: <a href="https://github.com/smallfawn/decode_action" target="_blank">decode_action</a></p>
         </footer>
@@ -458,117 +200,164 @@
 
     <!-- 优先加载js-beautify库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js"></script>
-    <!-- 全局插件容器 -->
+
+    <!-- 全局插件容器 + 工具 -->
     <script>
-        // 全局插件容器
         window.DecodePlugins = {};
-        
-        // 防抖函数，提高按钮响应性能
+
         function debounce(func, wait) {
             let timeout;
             return function() {
-                const context = this;
-                const args = arguments;
+                const context = this, args = arguments;
                 clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    func.apply(context, args);
-                }, wait);
+                timeout = setTimeout(() => func.apply(context, args), wait);
             };
         }
-        
-        // 增强控制台日志功能
+
         function addLogEntry(message, plugin = null) {
             const logContainer = document.getElementById('log-container');
-            if (!logContainer) return; // 防止DOM元素不存在
-            
+            if (!logContainer) return;
             const now = new Date();
             const timeString = now.toLocaleTimeString();
-            
             const logEntry = document.createElement('div');
             logEntry.className = 'log-entry';
-            
+
             const timeSpan = document.createElement('span');
             timeSpan.className = 'log-time';
             timeSpan.textContent = `[${timeString}]`;
-            
             logEntry.appendChild(timeSpan);
-            
+
             if (plugin) {
                 const pluginSpan = document.createElement('span');
                 pluginSpan.className = 'log-plugin';
                 pluginSpan.textContent = `[${plugin}]`;
                 logEntry.appendChild(pluginSpan);
             }
-            
+
             const messageSpan = document.createElement('span');
             messageSpan.textContent = message;
             logEntry.appendChild(messageSpan);
-            
+
             logContainer.appendChild(logEntry);
             logContainer.scrollTop = logContainer.scrollHeight;
         }
-        
-        // 格式化字节大小的辅助函数
+
         function formatBytes(bytes, decimals = 2) {
             if (bytes === 0) return '0 Bytes';
-            
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
+            const k = 1024, dm = decimals < 0 ? 0 : decimals;
             const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
-            
             const i = Math.floor(Math.log(bytes) / Math.log(k));
-            
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
-        
-        // 自动检测并解密函数
+
+        // === 新增：轻量检测器 + 路由建议 ===
+        function detectType(code) {
+            const s = (code || "").slice(0, 60000);
+            const hits = [];
+
+            if (/^\x1f\x8b\x08/.test(s) || /\x78[\x01\x9C\xDA]/.test(s)) hits.push("zlib");
+            if (/^\x42\x5a\x68/.test(s)) hits.push("bz2");
+            if (/^\xfd7zXZ\x00/.test(s)) hits.push("lzma");
+
+            if (/ﾟωﾟﾉ|（ﾟДﾟ）|｀； ﾟдﾟ/.test(s)) hits.push("aaencode");
+            if (/[\[\]\(\)\!\+]{120,}/.test(s) || /^\s*(\(\!!\[]|\+!\[]|\[\]\+!\[])/.test(s)) hits.push("jsfuck");
+            if (/JJEncode|ﾟΘ|_\$|^\s*[\w$]{1,3}=\[\];\s*\1\[/.test(s)) hits.push("jjencode");
+
+            if (/jsjiami\.com/.test(s)) hits.push(/v7|jsjiami\.v7/.test(s) ? "jsjiami_v7" : "jsjiami_v6");
+            if (/sojson/.test(s)) hits.push(/v7/.test(s) ? "sojson_v7" : "sojson_v6");
+
+            if (/\b_0x[0-9a-f]{3,}\b/.test(s) && /['"]use strict['"]/.test(s)) hits.push("obfuscator");
+            if (/aliyun|awsc|AntiDebug|hexcase/.test(s)) hits.push("awsc");
+
+            if (/\b(document|window|navigator|location|Image|CanvasRenderingContext2D|requestAnimationFrame|performance\.now)\b/.test(s)) {
+                hits.push("browser_semantics");
+            }
+
+            const type = choosePrimary(hits) || "auto";
+            let conf = 70;
+            if (/jsjiami\.com|sojson|_0x[0-9a-f]{3,}/i.test(s)) conf += 20;
+            if (/v7/.test(type)) conf += 5;
+            if (hits.length >= 2) conf += 5;
+            conf = Math.max(50, Math.min(95, conf));
+
+            return { type, confidence: conf, features: hits, detail: type === 'auto' ? '未明显命中特征' : `命中: ${type}` };
+        }
+        function choosePrimary(arr){
+            if (!arr.length) return null;
+            const order = ["jsjiami_v7","sojson_v7","jsjiami_v6","sojson_v6","obfuscator","jjencode","jsfuck","zlib","bz2","lzma","awsc","aaencode","browser_semantics"];
+            for (const k of order) if (arr.includes(k)) return k;
+            return arr[0];
+        }
+        function decideRoute(type){
+            const WEB = new Set(["aaencode","browser_semantics"]);
+            const CLOUD = new Set(["zlib","bz2","lzma","jjencode","jsfuck","jsjiami_v6","jsjiami_v7","sojson_v6","sojson_v7","obfuscator","awsc"]);
+            if (WEB.has(type)) return "web";
+            if (CLOUD.has(type)) return "cloud";
+            return "try_web_then_cloud";
+        }
+        function looksEncrypted(s=''){
+            const dense = (s.match(/[A-Za-z0-9+/=]/g)||[]).length / Math.max(1,s.length);
+            return /_0x[0-9a-f]{3,}/i.test(s) || /[\[\]\(\)\!\+]{120,}/.test(s) || dense > 0.68;
+        }
+
+        // === 自动解密（会先做检测，并按检测动态排序插件） ===
         async function autoDecrypt(code) {
             if (!code || code.trim() === '') {
-                return {
-                    success: false,
-                    error: "输入代码为空",
-                    code: ""
-                };
+                return { success: false, error: "输入代码为空", code: "" };
             }
-            
-            // 插件顺序
-            const pluginOrder = [
-                'eval', 'jsjiamiv5', 'aadecode', 'obfuscator', 'jsfuck',
-                'sojsonv7', 'sojson', 'jsconfuser', 'awsc', 'jjencode', 'common'
-            ];
-            
+
+            // 1) 检测 + 路由建议
+            const det = detectType(code);
+            const route = decideRoute(det.type);
+            addLogEntry(`检测类型：${det.type}（置信度 ${det.confidence}%），建议路由：${route}${det.features.length?`，特征：${det.features.join(', ')}`:''}`);
+
+            // 2) 根据检测结果动态调整插件顺序
+            const BASE_ORDER = ['eval','jsjiamiv5','aadecode','obfuscator','jsfuck','sojsonv7','sojson','jsconfuser','awsc','jjencode','common'];
+            let pluginOrder = [...BASE_ORDER];
+
+            const preferFirst = {
+                jsjiami_v7: ['sojsonv7','sojson','eval'],
+                jsjiami_v6: ['sojson','eval'],
+                sojson_v7:  ['sojsonv7','sojson','eval'],
+                sojson_v6:  ['sojson','eval'],
+                obfuscator: ['obfuscator','eval'],
+                jsfuck:     ['jsfuck','eval'],
+                jjencode:   ['jjencode','eval'],
+                awsc:       ['awsc','eval'],
+                aaencode:   ['aadecode','eval'],
+                browser_semantics: ['aadecode','eval']
+            };
+            if (preferFirst[det.type]) {
+                const pref = new Set(preferFirst[det.type]);
+                pluginOrder = [
+                    ...preferFirst[det.type],
+                    ...BASE_ORDER.filter(x => !pref.has(x))
+                ];
+            }
+
+            // 3) 逐个插件尝试
             let processedCode = code;
             let pluginUsed = null;
-            
             addLogEntry("开始解密过程，按顺序尝试各插件...");
-            
-            // 尝试各插件解密
+
             for (const pluginName of pluginOrder) {
                 const plugin = window.DecodePlugins[pluginName];
-                
-                // 如果插件未加载，跳过
-                if (!plugin) {
-                    addLogEntry(`插件 ${pluginName} 未加载`, "警告");
-                    continue;
-                }
-                
+                if (!plugin) { addLogEntry(`插件 ${pluginName} 未加载`, "警告"); continue; }
+
                 try {
-                    // 调用插件的检测函数
                     addLogEntry(`尝试检测是否为 ${pluginName} 加密`, pluginName);
-                    
-                    if (plugin.detect && plugin.detect(processedCode)) {
-                        addLogEntry(`检测到 ${pluginName} 加密，正在解密...`, pluginName);
-                        
-                        // 调用解密函数
+                    const ok = plugin.detect ? !!plugin.detect(processedCode) : true;
+
+                    if (ok) {
+                        addLogEntry(`检测到 ${pluginName} 可能适用，正在解密...`, pluginName);
                         const decryptFn = plugin.unpack || plugin.plugin || plugin.handle;
                         if (decryptFn) {
-                            const startTime = performance.now();
+                            const t0 = performance.now();
                             const result = await Promise.resolve(decryptFn(processedCode));
-                            const endTime = performance.now();
-                            
+                            const t1 = performance.now();
+
                             if (result && result !== processedCode) {
-                                addLogEntry(`${pluginName} 解密成功! 耗时: ${(endTime-startTime).toFixed(2)}ms`, pluginName);
-                                
+                                addLogEntry(`${pluginName} 解密成功! 耗时: ${(t1 - t0).toFixed(2)}ms`, pluginName);
                                 processedCode = result;
                                 pluginUsed = pluginName;
                                 break;
@@ -583,77 +372,55 @@
                     addLogEntry(`使用 ${pluginName} 解密时出错: ${error.message}`, "错误");
                 }
             }
-            
-            // 格式化结果
+
+            // 4) 格式化与兜底
             if (processedCode !== code) {
                 try {
-                    // 使用js-beautify格式化代码
                     addLogEntry("解密成功，正在格式化代码...");
-                    
                     if (window.js_beautify) {
-                        processedCode = js_beautify(processedCode, {
-                            indent_size: 2,
-                            space_in_empty_paren: true
-                        });
+                        processedCode = js_beautify(processedCode, { indent_size: 2, space_in_empty_paren: true });
                     }
-                    
                     const time = new Date().toLocaleString();
                     const header = [
                         `//${time}`,
                         "//Base:https://github.com/echo094/decode-js",
                         "//Modify:https://github.com/smallfawn/decode_action",
-                        `//解密插件: ${pluginUsed || '未知'}`
+                        `//解密插件: ${pluginUsed || '未知'}`,
+                        `//检测类型: ${det.type}（${det.confidence}%） 路由: ${route}`
                     ].join('\n');
-                    
+
                     addLogEntry(`格式化完成，使用了 ${pluginUsed} 插件解密`);
-                    
-                    return {
-                        success: true,
-                        code: header + '\n' + processedCode,
-                        plugin: pluginUsed
-                    };
+                    return { success: true, code: header + '\n' + processedCode, plugin: pluginUsed };
                 } catch (e) {
                     addLogEntry(`格式化代码失败: ${e.message}`, "错误");
-                    
-                    return {
-                        success: false,
-                        error: "格式化代码失败: " + e.message,
-                        code: processedCode
-                    };
+                    return { success: false, error: "格式化代码失败: " + e.message, code: processedCode };
                 }
             } else {
-                // 所有插件都无效，尝试common插件
                 addLogEntry("所有特定插件均未改变代码，尝试common插件...");
-                
                 const commonPlugin = window.DecodePlugins.common;
                 if (commonPlugin && commonPlugin.plugin) {
                     try {
                         const result = await Promise.resolve(commonPlugin.plugin(code));
                         if (result && result !== code) {
                             addLogEntry("使用common插件解密成功", "common");
-                            
-                            return {
-                                success: true,
-                                code: result,
-                                plugin: 'common'
-                            };
+                            return { success: true, code: result, plugin: 'common' };
                         }
                     } catch (e) {
                         addLogEntry(`Common插件错误: ${e.message}`, "错误");
                     }
                 }
-                
+
+                // 如果检测建议 cloud，给出提示（此处仍本地执行）
+                if (decideRoute(det.type) === 'cloud') {
+                    addLogEntry("建议：该类型更适合云端(Node/Actions)解密，若本地无效请改走云端。", "提示");
+                }
+
                 addLogEntry("所有插件处理后代码与原代码一致，可能不支持该加密类型", "警告");
-                
-                return {
-                    success: false,
-                    error: "所有插件处理后代码与原代码一致，可能不支持该加密类型。",
-                    code: code
-                };
+                return { success: false, error: "所有插件处理后代码与原代码一致，可能不支持该加密类型。", code: code };
             }
         }
     </script>
-    
+
     <!-- 加载所有插件包装器 -->
     <script src="wrapper/jsjiamiv5-wrapper.js"></script>
     <script src="wrapper/aadecode-wrapper.js"></script>
@@ -666,6 +433,7 @@
     <script src="wrapper/obfuscator-wrapper.js"></script>
     <script src="wrapper/sojson-wrapper.js"></script>
     <script src="wrapper/sojsonv7-wrapper.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // 标签切换
@@ -673,51 +441,42 @@
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     const tabId = this.getAttribute('data-tab');
-                    
-                    // 更新标签激活状态
                     tabs.forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
-                    
-                    // 更新内容显示
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                     document.getElementById(tabId).classList.add('active');
                 });
             });
-            
+
             // 解密按钮
             const decryptBtn = document.getElementById('decrypt-btn');
             if (decryptBtn) {
                 decryptBtn.addEventListener('click', debounce(async function() {
                     const inputEditor = document.getElementById('input-editor');
                     if (!inputEditor) return;
-                    
+
                     const codeInput = inputEditor.value;
                     const outputEditor = document.getElementById('output-editor');
                     const statusIndicator = document.getElementById('status-indicator');
                     const statusText = document.getElementById('status-text');
-                    
+
                     if (!codeInput.trim()) {
                         statusIndicator.className = 'status-indicator error';
                         statusText.textContent = '错误: 请输入需要解密的代码';
                         return;
                     }
-                    
-                    // 禁用按钮，防止重复点击
+
                     decryptBtn.disabled = true;
                     decryptBtn.textContent = '解密中...';
-                    
-                    // 更新状态
                     statusIndicator.className = 'status-indicator';
                     statusText.textContent = '正在解密...';
-                    
+
                     try {
                         addLogEntry("开始新的解密任务...");
                         const startTime = performance.now();
                         const result = await autoDecrypt(codeInput);
                         const endTime = performance.now();
-                        
+
                         if (result.success) {
                             outputEditor.value = result.code;
                             statusIndicator.className = 'status-indicator success';
@@ -735,13 +494,12 @@
                         statusText.textContent = `发生错误: ${e.message}`;
                         addLogEntry(`解密过程发生错误: ${e.message}`, "错误");
                     } finally {
-                        // 恢复按钮状态
                         decryptBtn.disabled = false;
                         decryptBtn.textContent = '点击解密';
                     }
                 }, 300));
             }
-            
+
             // 清除按钮
             const clearBtn = document.getElementById('clear-btn');
             if (clearBtn) {
@@ -750,32 +508,27 @@
                     const outputEditor = document.getElementById('output-editor');
                     if (inputEditor) inputEditor.value = '';
                     if (outputEditor) outputEditor.value = '';
-                    
                     const statusIndicator = document.getElementById('status-indicator');
                     const statusText = document.getElementById('status-text');
                     if (statusIndicator) statusIndicator.className = 'status-indicator';
                     if (statusText) statusText.textContent = '准备就绪';
-                    
                     addLogEntry("清除输入和输出");
                 });
             }
-            
+
             // 复制结果
             const copyBtn = document.getElementById('copy-btn');
             if (copyBtn) {
                 copyBtn.addEventListener('click', function() {
                     const outputEditor = document.getElementById('output-editor');
                     if (!outputEditor) return;
-                    
                     const outputText = outputEditor.value;
                     if (outputText) {
                         navigator.clipboard.writeText(outputText).then(() => {
                             const statusText = document.getElementById('status-text');
                             if (statusText) {
                                 statusText.textContent = '已复制到剪贴板';
-                                setTimeout(() => {
-                                    statusText.textContent = '准备就绪';
-                                }, 2000);
+                                setTimeout(() => { statusText.textContent = '准备就绪'; }, 2000);
                             }
                             addLogEntry("复制结果到剪贴板");
                         }).catch(err => {
@@ -785,14 +538,13 @@
                     }
                 });
             }
-            
+
             // 下载结果
             const downloadBtn = document.getElementById('download-btn');
             if (downloadBtn) {
                 downloadBtn.addEventListener('click', function() {
                     const outputEditor = document.getElementById('output-editor');
                     if (!outputEditor) return;
-                    
                     const outputText = outputEditor.value;
                     if (outputText) {
                         const blob = new Blob([outputText], { type: 'text/javascript' });
@@ -808,32 +560,19 @@
                     }
                 });
             }
-            
+
             // 文件上传处理
             const fileInput = document.getElementById('file-input');
             const fileSelectBtn = document.getElementById('file-select-btn');
             const fileDropArea = document.getElementById('file-drop-area');
-            
+
             if (fileInput && fileSelectBtn && fileDropArea) {
-                fileSelectBtn.addEventListener('click', function() {
-                    fileInput.click();
-                });
-                
-                fileInput.addEventListener('change', function() {
-                    handleFileUpload(fileInput);
-                });
-                
-                // 拖放处理
-                fileDropArea.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    fileDropArea.style.borderColor = 'var(--highlight-color)';
-                });
-                
-                fileDropArea.addEventListener('dragleave', function() {
-                    fileDropArea.style.borderColor = 'var(--border-color)';
-                });
-                
-                fileDropArea.addEventListener('drop', function(e) {
+                fileSelectBtn.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', () => handleFileUpload(fileInput));
+
+                fileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); fileDropArea.style.borderColor = 'var(--highlight-color)'; });
+                fileDropArea.addEventListener('dragleave', () => { fileDropArea.style.borderColor = 'var(--border-color)'; });
+                fileDropArea.addEventListener('drop', (e) => {
                     e.preventDefault();
                     fileDropArea.style.borderColor = 'var(--border-color)';
                     if (e.dataTransfer.files.length) {
@@ -842,32 +581,25 @@
                     }
                 });
             }
-            
-            // 处理文件上传
+
             function handleFileUpload(input) {
                 if (!input) return;
-                
                 const file = input.files[0];
                 if (!file) return;
-                
                 addLogEntry(`处理上传文件: ${file.name} (${formatBytes(file.size)})`);
-                
+
                 const reader = new FileReader();
                 reader.onload = async function(e) {
                     const fileContent = e.target.result;
                     const fileOutput = document.getElementById('file-output');
                     const fileResultContainer = document.getElementById('file-result-container');
                     const fileButtons = document.getElementById('file-buttons');
-                    
                     if (!fileOutput || !fileResultContainer || !fileButtons) return;
-                    
+
                     try {
-                        // 显示加载状态
                         fileOutput.value = "正在解密，请稍候...";
                         fileResultContainer.classList.remove('hidden');
-                        
                         const result = await autoDecrypt(fileContent);
-                        
                         fileOutput.value = result.success ? result.code : (result.error || '解密失败');
                         fileButtons.classList.remove('hidden');
                     } catch (error) {
@@ -876,43 +608,31 @@
                         addLogEntry(`文件解密错误: ${error.message}`, "错误");
                     }
                 };
-                
-                reader.onerror = function() {
-                    addLogEntry("读取文件时发生错误", "错误");
-                };
-                
+                reader.onerror = () => addLogEntry("读取文件时发生错误", "错误");
                 reader.readAsText(file);
             }
-            
+
             // 文件结果复制
             const fileCopyBtn = document.getElementById('file-copy-btn');
             if (fileCopyBtn) {
                 fileCopyBtn.addEventListener('click', function() {
                     const fileOutput = document.getElementById('file-output');
                     if (!fileOutput) return;
-                    
                     const outputText = fileOutput.value;
                     if (outputText) {
                         navigator.clipboard.writeText(outputText)
-                            .then(() => {
-                                addLogEntry("复制文件解密结果到剪贴板");
-                                alert('已复制到剪贴板');
-                            })
-                            .catch(err => {
-                                console.error('复制失败:', err);
-                                addLogEntry("复制到剪贴板失败", "错误");
-                            });
+                            .then(() => { addLogEntry("复制文件解密结果到剪贴板"); alert('已复制到剪贴板'); })
+                            .catch(err => { console.error('复制失败:', err); addLogEntry("复制到剪贴板失败", "错误"); });
                     }
                 });
             }
-            
+
             // 文件结果下载
             const fileDownloadBtn = document.getElementById('file-download-btn');
             if (fileDownloadBtn) {
                 fileDownloadBtn.addEventListener('click', function() {
                     const fileOutput = document.getElementById('file-output');
                     if (!fileOutput) return;
-                    
                     const outputText = fileOutput.value;
                     if (outputText) {
                         const blob = new Blob([outputText], { type: 'text/javascript' });
@@ -928,7 +648,7 @@
                     }
                 });
             }
-            
+
             // URL输入处理
             const urlFetchBtn = document.getElementById('url-fetch-btn');
             if (urlFetchBtn) {
@@ -937,39 +657,25 @@
                     const urlOutput = document.getElementById('url-output');
                     const urlResultContainer = document.getElementById('url-result-container');
                     const urlButtons = document.getElementById('url-buttons');
-                    
                     if (!urlInput || !urlOutput || !urlResultContainer || !urlButtons) return;
-                    
+
                     const url = urlInput.value;
-                    if (!url.trim()) {
-                        alert('请输入有效的URL');
-                        return;
-                    }
-                    
-                    // 禁用按钮，防止重复点击
+                    if (!url.trim()) { alert('请输入有效的URL'); return; }
+
                     urlFetchBtn.disabled = true;
                     urlFetchBtn.textContent = '获取中...';
-                    
                     addLogEntry(`获取远程URL内容: ${url}`);
-                    
+
                     try {
-                        // 显示加载状态
                         urlOutput.value = "正在获取内容，请稍候...";
                         urlResultContainer.classList.remove('hidden');
-                        
-                        // 获取URL内容
                         const response = await fetch(url);
-                        if (!response.ok) {
-                            throw new Error(`HTTP错误 ${response.status}`);
-                        }
-                        
+                        if (!response.ok) throw new Error(`HTTP错误 ${response.status}`);
                         const code = await response.text();
                         addLogEntry(`成功获取URL内容，长度: ${formatBytes(code.length)}`);
-                        
+
                         urlOutput.value = "正在解密，请稍候...";
-                        
                         const result = await autoDecrypt(code);
-                        
                         urlOutput.value = result.success ? result.code : (result.error || '解密失败');
                         urlButtons.classList.remove('hidden');
                     } catch (error) {
@@ -977,42 +683,33 @@
                         urlButtons.classList.remove('hidden');
                         addLogEntry(`URL处理错误: ${error.message}`, "错误");
                     } finally {
-                        // 恢复按钮状态
                         urlFetchBtn.disabled = false;
                         urlFetchBtn.textContent = '获取并解密';
                     }
                 }, 300));
             }
-            
+
             // URL结果复制
             const urlCopyBtn = document.getElementById('url-copy-btn');
             if (urlCopyBtn) {
                 urlCopyBtn.addEventListener('click', function() {
                     const urlOutput = document.getElementById('url-output');
                     if (!urlOutput) return;
-                    
                     const outputText = urlOutput.value;
                     if (outputText) {
                         navigator.clipboard.writeText(outputText)
-                            .then(() => {
-                                addLogEntry("复制URL解密结果到剪贴板");
-                                alert('已复制到剪贴板');
-                            })
-                            .catch(err => {
-                                console.error('复制失败:', err);
-                                addLogEntry("复制到剪贴板失败", "错误");
-                            });
+                            .then(() => { addLogEntry("复制URL解密结果到剪贴板"); alert('已复制到剪贴板'); })
+                            .catch(err => { console.error('复制失败:', err); addLogEntry("复制到剪贴板失败", "错误"); });
                     }
                 });
             }
-            
+
             // URL结果下载
             const urlDownloadBtn = document.getElementById('url-download-btn');
             if (urlDownloadBtn) {
                 urlDownloadBtn.addEventListener('click', function() {
                     const urlOutput = document.getElementById('url-output');
                     if (!urlOutput) return;
-                    
                     const outputText = urlOutput.value;
                     if (outputText) {
                         const blob = new Blob([outputText], { type: 'text/javascript' });
@@ -1028,38 +725,21 @@
                     }
                 });
             }
-            
-            // 检查已加载的插件
+
+            // 插件加载检查
             setTimeout(() => {
-                let loadedPlugins = [];
-                let notLoadedPlugins = [];
-                
-                const pluginNames = ['eval', 'jsjiamiv5', 'aadecode', 'obfuscator', 'jsfuck', 'sojsonv7', 'sojson', 'jsconfuser', 'awsc', 'jjencode', 'common'];
-                
-                for (const pluginName of pluginNames) {
-                    if (window.DecodePlugins[pluginName]) {
-                        loadedPlugins.push(pluginName);
-                    } else {
-                        notLoadedPlugins.push(pluginName);
-                    }
-                }
-                
-                if (loadedPlugins.length > 0) {
-                    addLogEntry(`成功加载了 ${loadedPlugins.length} 个插件: ${loadedPlugins.join(', ')}`);
-                }
-                
-                if (notLoadedPlugins.length > 0) {
-                    addLogEntry(`未加载 ${notLoadedPlugins.length} 个插件: ${notLoadedPlugins.join(', ')}`, "警告");
-                }
+                const pluginNames = ['eval','jsjiamiv5','aadecode','obfuscator','jsfuck','sojsonv7','sojson','jsconfuser','awsc','jjencode','common'];
+                const loaded = [], missing = [];
+                for (const n of pluginNames) (window.DecodePlugins[n]?loaded:missing).push(n);
+                if (loaded.length) addLogEntry(`成功加载 ${loaded.length} 个插件: ${loaded.join(', ')}`);
+                if (missing.length) addLogEntry(`未加载 ${missing.length} 个插件: ${missing.join(', ')}`, "警告");
             }, 1000);
-            
+
             // 初始化状态
             const statusIndicator = document.getElementById('status-indicator');
             const statusText = document.getElementById('status-text');
             if (statusIndicator) statusIndicator.className = 'status-indicator';
             if (statusText) statusText.textContent = '准备就绪';
-            
-            // 添加初始日志
             addLogEntry("解密工具初始化完成，支持自动检测多种加密类型");
         });
     </script>
