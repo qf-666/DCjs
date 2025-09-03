@@ -1,0 +1,169 @@
+name: Decode Web Request
+
+on:
+  issues:
+    types: [opened, edited]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: string
+
+# 放到顶层更稳
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  decode:
+    # 只有 issues 事件时才访问 github.event.issue，避免表达式解析期就报错
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && contains(github.event.issue.title, '[Web解密请求]')) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get issue number
+        id: get_issue
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ISSUE_NUMBER=${{ github.event.inputs.issue_number }}" >> "$GITHUB_ENV"
+          else
+            echo "ISSUE_NUMBER=${{ github.event.issue.number }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Get code from issue
+        id: get_code
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = Number(process.env.ISSUE_NUMBER);
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number
+            });
+
+            const body = issue.body || "";
+
+            // 解析头部表单（可选）
+            const fileTypeMatch   = body.match(/\*\*文件类型:\*\*\s*`(.+?)`/);
+            const encryptTypeMatch= body.match(/\*\*加密类型:\*\*\s*`(.+?)`/);
+
+            const fileType   = (fileTypeMatch && fileTypeMatch[1]) ? fileTypeMatch[1].trim() : "js";
+            const encryptType= (encryptTypeMatch && encryptTypeMatch[1]) ? encryptTypeMatch[1].trim() : "auto";
+
+            // 提取第一段代码块
+            const codeBlockRegex = /```[^\n]*\n([\s\S]*?)```/;
+            const m = body.match(codeBlockRegex);
+            const code = m ? m[1] : "";
+
+            core.exportVariable('FILE_TYPE', fileType);
+            core.exportVariable('ENCRYPT_TYPE', encryptType);
+
+            const fs = require('fs');
+            fs.writeFileSync(`input.${fileType}`, code, 'utf8');
+
+            core.info(`File type: ${fileType}`);
+            core.info(`Encrypt type: ${encryptType}`);
+            core.info(`Code length: ${code.length} chars`);
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm i
+
+      - name: Run decryption
+        shell: bash
+        run: |
+          FILE_TYPE="${FILE_TYPE:-js}"
+          ENCRYPT_TYPE="${ENCRYPT_TYPE:-auto}"
+
+          echo "开始解密 ${FILE_TYPE} 文件，使用 ${ENCRYPT_TYPE} 解密类型"
+
+          case "$FILE_TYPE" in
+            js)
+              node src/main.js -i input.js -o output.js
+              ;;
+            py)
+              python3 src/decode.py
+              [ -f "output.py" ] || { echo "Python 解密失败或未产生输出文件"; exit 1; }
+              ;;
+            php)
+              node src/main.js -i input.php -o output.php
+              ;;
+            *)
+              echo "不支持的文件类型: $FILE_TYPE"
+              exit 1
+              ;;
+          esac
+
+      - name: Configure Git author
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Save decoded output
+        shell: bash
+        run: |
+          FILE_TYPE="${FILE_TYPE:-js}"
+          OUT="output.${FILE_TYPE}"
+
+          if [ -f "$OUT" ]; then
+            git add "$OUT"
+            git commit -m "Add decoded output file from web request #${ISSUE_NUMBER}" || echo "no changes to commit"
+            git push || true
+          else
+            echo "输出文件不存在: $OUT"
+            exit 1
+          fi
+
+      - name: Comment on issue with results
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const issue_number = Number(process.env.ISSUE_NUMBER);
+            const fileType = process.env.FILE_TYPE || 'js';
+            const outputFile = `output.${fileType}`;
+
+            let resultContent = '';
+            try {
+              resultContent = fs.readFileSync(outputFile, 'utf8');
+            } catch (e) {
+              resultContent = '解密过程出错，未生成结果文件。';
+            }
+
+            const now = new Date().toISOString();
+            const preview = resultContent.length > 65000
+              ? resultContent.slice(0, 65000) + '...(结果过长，已截断)'
+              : resultContent;
+
+            const body = [
+              '## 解密结果',
+              '',
+              `解密类型: \`${process.env.ENCRYPT_TYPE || 'auto'}\``,
+              `处理时间: ${now}`,
+              '',
+              '```' + fileType,
+              preview,
+              '```',
+              '',
+              '解密完成! 如果结果不符合预期，请尝试选择不同的解密类型。解密结果也已保存到仓库文件中。'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body
+            });
+            core.info(`已评论到 issue #${issue_number}`);
